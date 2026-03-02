@@ -1,7 +1,7 @@
 package com.employment.repository;
 
 import com.employment.entity.Application;
-import com.employment.entity.User;
+import com.employment.entity.Student;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -10,5 +10,5 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
 
     long countByJobId(Long jobId);
 
-    List<Application> findByStudent(User student);
+    List<Application> findByStudent(Student student);
 }

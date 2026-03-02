@@ -284,7 +284,7 @@ const fetchJobs = async () => {
       params.append("experience", selectedExperience.value);
     }
 
-    const response = await fetch(`/api/jobs?${params.toString()}`, {
+    const response = await fetch(`/employment/api/jobs?${params.toString()}`, {
       credentials: "include",
     });
     if (response.ok) {
@@ -442,12 +442,22 @@ const closeJobDetail = () => {
 
 // 申请岗位
 const applyForJob = async (jobId) => {
+  if (!jobId) {
+    alert("岗位信息有误，无法申请");
+    return;
+  }
+
+  console.log("申请岗位参数:", { jobId });
+
   if (confirm("确定要申请这个岗位吗？")) {
     try {
-      const response = await fetch(`/api/applications/job/${jobId}`, {
-        method: "POST",
-        credentials: "include",
-      });
+      const response = await fetch(
+        `/employment/api/applications/job/${jobId}`,
+        {
+          method: "POST",
+          credentials: "include",
+        },
+      );
       if (response.ok) {
         alert("申请成功！");
         closeJobDetail();

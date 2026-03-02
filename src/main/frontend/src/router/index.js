@@ -85,7 +85,7 @@ router.beforeEach((to, from, next) => {
     return;
   }
 
-  const isAuthenticated = localStorage.getItem("token");
+  const isAuthenticated = localStorage.getItem("username");
   console.log("路由守卫检查:", {
     to: to.path,
     isAuthenticated: !!isAuthenticated,

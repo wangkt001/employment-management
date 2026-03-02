@@ -33,7 +33,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         System.out.println("开始配置SecurityFilterChain");
         logger.debug("开始配置SecurityFilterChain");
-        
+
         http
                 .csrf(csrf -> {
                     System.out.println("禁用CSRF保护");
@@ -44,12 +44,14 @@ public class SecurityConfig {
                     System.out.println("配置CORS策略");
                     logger.debug("配置CORS策略");
                     org.springframework.web.cors.CorsConfiguration config = new org.springframework.web.cors.CorsConfiguration();
-                    config.setAllowedOrigins(java.util.Arrays.asList("http://localhost:3000", "http://localhost:3001"));
+                    config.setAllowedOrigins(java.util.Arrays.asList("http://localhost:3000", "http://localhost:3001",
+                            "http://localhost:3002"));
                     config.setAllowedMethods(
                             java.util.Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
                     config.setAllowedHeaders(java.util.Arrays.asList("*"));
                     config.setAllowCredentials(true);
-                    System.out.println("CORS配置完成: 允许来源=" + config.getAllowedOrigins() + ", 允许方法=" + config.getAllowedMethods());
+                    System.out.println(
+                            "CORS配置完成: 允许来源=" + config.getAllowedOrigins() + ", 允许方法=" + config.getAllowedMethods());
                     logger.debug("CORS配置完成: 允许来源={}, 允许方法={}", config.getAllowedOrigins(), config.getAllowedMethods());
                     return config;
                 }))
@@ -60,9 +62,11 @@ public class SecurityConfig {
                             .requestMatchers("/api/company/jobs").permitAll() // 精确匹配
                             .requestMatchers("/api/**").permitAll()
                             .requestMatchers("/employment/api/**").permitAll()
+                            .requestMatchers("/login").permitAll()
+                            .requestMatchers("/logout").permitAll()
                             .requestMatchers("/employment/login").permitAll()
                             .requestMatchers("/employment/logout").permitAll()
-                            .requestMatchers("/", "/login", "/register", "/css/**", "/js/**", "/assets/**").permitAll()
+                            .requestMatchers("/", "/register", "/css/**", "/js/**", "/assets/**").permitAll()
                             .requestMatchers("/admin/**").hasRole("ADMIN")
                             .requestMatchers("/company/**").hasAnyRole("COMPANY", "ADMIN")
                             .requestMatchers("/student/**").hasAnyRole("STUDENT", "ADMIN")
@@ -72,10 +76,11 @@ public class SecurityConfig {
                 })
                 .formLogin(form -> form
                         .loginPage("/employment/index.html")
-                        .loginProcessingUrl("/employment/login")
+                        .loginProcessingUrl("/login")
+                        .defaultSuccessUrl("/api/users/current", true) // 登录成功后返回用户信息
                         .permitAll())
                 .logout(logout -> logout
-                        .logoutUrl("/employment/logout")
+                        .logoutUrl("/logout")
                         .logoutSuccessUrl("/employment/index.html")
                         .permitAll())
                 .sessionManagement(session -> session
@@ -85,7 +90,7 @@ public class SecurityConfig {
                 .rememberMe(remember -> remember
                         .key("employment-system-key")
                         .tokenValiditySeconds(86400)); // 24小时
-        
+
         System.out.println("SecurityFilterChain配置完成");
         logger.debug("SecurityFilterChain配置完成");
         return http.build();

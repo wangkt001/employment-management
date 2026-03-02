@@ -61,7 +61,9 @@
           <StatusStates
             :is-loading="isLoading"
             :error="error"
-            :is-empty="!isLoading && !error && filteredApplications.length === 0"
+            :is-empty="
+              !isLoading && !error && filteredApplications.length === 0
+            "
             type="applications"
             @retry="fetchApplications"
           />
@@ -83,7 +85,11 @@
             <el-table-column type="selection" width="55" />
             <el-table-column prop="id" label="ID" width="80" />
             <el-table-column prop="jobTitle" label="岗位名称" min-width="200" />
-            <el-table-column prop="companyName" label="公司名称" min-width="150" />
+            <el-table-column
+              prop="companyName"
+              label="公司名称"
+              min-width="150"
+            />
             <el-table-column label="申请状态" width="120">
               <template #default="scope">
                 <el-tag
@@ -171,18 +177,20 @@ const fetchApplications = async () => {
   isLoading.value = true;
   error.value = "";
   try {
-    const response = await fetch("/api/applications/student", {
-      credentials: "include"
+    const response = await fetch("/employment/api/applications/student", {
+      credentials: "include",
     });
     if (response.ok) {
       const data = await response.json();
       // 转换后端数据格式以匹配前端需求
-      applications.value = data.map(application => ({
+      applications.value = data.map((application) => ({
         id: application.id,
         jobTitle: application.job?.title || "未知岗位",
         companyName: application.job?.company?.companyName || "未知公司",
         status: application.status,
-        appliedDate: application.applyDate ? new Date(application.applyDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+        appliedDate: application.applyDate
+          ? new Date(application.applyDate).toISOString().split("T")[0]
+          : new Date().toISOString().split("T")[0],
       }));
     } else {
       error.value = "获取申请数据失败";
@@ -275,10 +283,12 @@ const cancelApplication = async (applicationId) => {
   if (confirm("确定要取消这个申请吗？")) {
     try {
       // 模拟API调用
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
       // 从本地数据中移除
-      applications.value = applications.value.filter(app => app.id !== applicationId);
+      applications.value = applications.value.filter(
+        (app) => app.id !== applicationId,
+      );
       alert("申请已取消！");
     } catch (error) {
       console.error("取消申请失败:", error);

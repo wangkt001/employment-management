@@ -93,95 +93,74 @@ const login = async () => {
   isLoading.value = true;
 
   try {
-    // 尝试获取用户信息
-    const userInfoResponse = await fetch("/employment/api/admin/users", {
+    // 使用自定义的登录接口
+    const loginResponse = await fetch("/employment/api/login", {
+      method: "POST",
       credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        username: form.value.username,
+        password: form.value.password,
+      }),
     });
 
-    let isAdmin = false;
-    let isStudent = false;
-    let isCompany = false;
+    // 检查是否登录成功
+    if (loginResponse.ok) {
+      try {
+        const loginResult = await loginResponse.json();
+        if (loginResult.success) {
+          const user = loginResult.user;
+          if (user && user.username) {
+            // 根据用户角色设置权限
+            const isAdmin =
+              user.role === "ADMIN" ||
+              user.role === "admin" ||
+              user.role === "Admin";
+            const isStudent =
+              user.role === "STUDENT" ||
+              user.role === "student" ||
+              user.role === "Student";
+            const isCompany =
+              user.role === "COMPANY" ||
+              user.role === "company" ||
+              user.role === "Company";
 
-    if (userInfoResponse.ok) {
-      const users = await userInfoResponse.json();
-      console.log("获取到的用户列表:", users);
-      const currentUser = users.find(
-        (user) => user.username === form.value.username,
-      );
-      console.log("当前用户信息:", currentUser);
+            // 存储用户信息
+            localStorage.setItem("username", user.username);
+            localStorage.setItem("isAdmin", isAdmin.toString());
+            localStorage.setItem("isStudent", isStudent.toString());
+            localStorage.setItem("isCompany", isCompany.toString());
 
-      if (currentUser) {
-        // 根据用户角色设置权限
-        isAdmin =
-          currentUser.role === "ADMIN" ||
-          currentUser.role === "admin" ||
-          currentUser.role === "Admin";
-        isStudent =
-          currentUser.role === "STUDENT" ||
-          currentUser.role === "student" ||
-          currentUser.role === "Student";
-        isCompany =
-          currentUser.role === "COMPANY" ||
-          currentUser.role === "company" ||
-          currentUser.role === "Company";
-      } else {
-        // 如果没有找到用户，使用默认逻辑
-        isAdmin = form.value.username === "admin";
-        isStudent = form.value.username === "student";
-        isCompany =
-          form.value.username === "company" || form.value.username === "yunsi";
+            console.log("登录成功，localStorage存储:", {
+              username: localStorage.getItem("username"),
+              isAdmin: localStorage.getItem("isAdmin"),
+              isStudent: localStorage.getItem("isStudent"),
+              isCompany: localStorage.getItem("isCompany"),
+            });
+
+            // 登录成功，跳转到仪表盘
+            router.push("/dashboard");
+          } else {
+            // 用户信息为空，登录失败
+            error.value = "登录失败，无法获取用户信息";
+          }
+        } else {
+          // 登录失败
+          error.value = loginResult.message || "登录失败";
+        }
+      } catch (jsonError) {
+        console.error("解析登录结果失败:", jsonError);
+        error.value = "登录失败，无法解析响应";
       }
     } else {
-      // 如果获取用户信息失败，使用默认逻辑
-      isAdmin = form.value.username === "admin";
-      isStudent = form.value.username === "student";
-      isCompany =
-        form.value.username === "company" || form.value.username === "yunsi";
+      // 登录请求失败
+      error.value = "登录失败，请稍后重试";
     }
-
-    // 存储用户信息
-    localStorage.setItem("token", "mock-token");
-    localStorage.setItem("username", form.value.username);
-    localStorage.setItem("isAdmin", isAdmin.toString());
-    localStorage.setItem("isStudent", isStudent.toString());
-    localStorage.setItem("isCompany", isCompany.toString());
-
-    console.log("登录成功，localStorage存储:", {
-      token: localStorage.getItem("token"),
-      username: localStorage.getItem("username"),
-      isAdmin: localStorage.getItem("isAdmin"),
-      isStudent: localStorage.getItem("isStudent"),
-      isCompany: localStorage.getItem("isCompany"),
-    });
-
-    // 无论后端登录是否成功，都跳转到仪表盘
-    router.push("/dashboard");
   } catch (err) {
     console.error("登录请求失败:", err);
-
-    // 即使发生错误，也使用默认逻辑设置用户角色
-    const isAdmin = form.value.username === "admin";
-    const isStudent = form.value.username === "student";
-    const isCompany =
-      form.value.username === "company" || form.value.username === "yunsi";
-
-    // 存储用户信息
-    localStorage.setItem("token", "mock-token");
-    localStorage.setItem("username", form.value.username);
-    localStorage.setItem("isAdmin", isAdmin.toString());
-    localStorage.setItem("isStudent", isStudent.toString());
-    localStorage.setItem("isCompany", isCompany.toString());
-
-    console.log("模拟登录成功，localStorage存储:", {
-      token: localStorage.getItem("token"),
-      username: localStorage.getItem("username"),
-      isAdmin: localStorage.getItem("isAdmin"),
-      isStudent: localStorage.getItem("isStudent"),
-      isCompany: localStorage.getItem("isCompany"),
-    });
-
-    // 跳转到仪表盘
-    router.push("/dashboard");
+    error.value = "网络错误，请稍后重试";
   } finally {
     isLoading.value = false;
   }

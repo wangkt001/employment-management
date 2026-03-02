@@ -27,27 +27,7 @@ export default defineConfig({
       ],
     },
     proxy: {
-      "/api": {
-        target: "http://localhost:8080/employment",
-        changeOrigin: true,
-      },
       "/employment/api": {
-        target: "http://localhost:8080",
-        changeOrigin: true,
-      },
-      "/api/applications": {
-        target: "http://localhost:8080/employment",
-        changeOrigin: true,
-      },
-      "/employment/applications": {
-        target: "http://localhost:8080",
-        changeOrigin: true,
-      },
-      "/employment/login": {
-        target: "http://localhost:8080",
-        changeOrigin: true,
-      },
-      "/employment/logout": {
         target: "http://localhost:8080",
         changeOrigin: true,
       },

@@ -10,6 +10,7 @@ import com.employment.repository.StudentRepository;
 import com.employment.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
@@ -31,19 +32,37 @@ public class StudentApplicationApiController {
     @Autowired
     private StudentRepository studentRepository;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     // 申请岗位
     @PostMapping("/job/{jobId}")
     public Application applyForJob(@PathVariable Long jobId, Authentication authentication) {
+        System.out.println("===========================================");
         System.out.println("接收到申请岗位请求，jobId: " + jobId);
+        System.out.println("===========================================");
         try {
             // 1. 查找岗位
             System.out.println("1. 查找岗位，jobId: " + jobId);
             Job job = null;
             try {
-                job = jobRepository.findById(jobId)
-                        .orElseThrow(() -> new RuntimeException("岗位不存在"));
+                System.out.println("尝试通过ID查找岗位: " + jobId);
+                // 先检查岗位是否存在
+                boolean jobExists = jobRepository.existsById(jobId);
+                System.out.println("岗位是否存在: " + jobExists);
+
+                if (!jobExists) {
+                    System.out.println("岗位不存在，jobId: " + jobId);
+                    throw new RuntimeException("岗位不存在，jobId: " + jobId);
+                }
+
+                job = jobRepository.findById(jobId).get();
                 System.out.println("找到岗位，jobId: " + job.getId() + ", title: " + job.getTitle());
-                System.out.println("岗位的companyId: " + job.getCompany().getId());
+                if (job.getCompany() != null) {
+                    System.out.println("岗位的companyId: " + job.getCompany().getId());
+                } else {
+                    System.out.println("岗位没有关联公司");
+                }
             } catch (Exception e) {
                 System.out.println("查找岗位失败: " + e.getMessage());
                 e.printStackTrace();
@@ -55,12 +74,13 @@ public class StudentApplicationApiController {
             User user = null;
             try {
                 if (authentication != null && authentication.getName() != null) {
+                    System.out.println("使用认证用户: " + authentication.getName());
                     user = userRepository.findByUsername(authentication.getName());
                     if (user == null) {
                         System.out.println("用户不存在，创建新用户");
                         user = new User();
                         user.setUsername(authentication.getName());
-                        user.setPassword("test"); // 实际应用中应该使用加密密码
+                        user.setPassword(passwordEncoder.encode("default123")); // 使用加密密码
                         user.setRole("STUDENT");
                         user.setName(authentication.getName());
                         user.setActive(true);
@@ -70,20 +90,9 @@ public class StudentApplicationApiController {
                         System.out.println("用户已存在，userId: " + user.getId());
                     }
                 } else {
-                    // 为了兼容测试，保留test用户作为 fallback
-                    user = userRepository.findByUsername("test");
-                    if (user == null) {
-                        System.out.println("测试用户不存在，创建测试用户");
-                        user = new User();
-                        user.setUsername("test");
-                        user.setPassword("test");
-                        user.setRole("STUDENT");
-                        user.setName("测试学生");
-                        user.setActive(true);
-                        user = userRepository.save(user);
-                        System.out.println("创建测试用户成功，userId: " + user.getId());
-                    }
-                    System.out.println("使用测试用户，userId: " + user.getId());
+                    // 认证失败，抛出错误
+                    System.out.println("未找到认证用户");
+                    throw new RuntimeException("用户未认证，请先登录");
                 }
             } catch (Exception e) {
                 System.out.println("获取或创建用户失败: " + e.getMessage());
@@ -91,18 +100,73 @@ public class StudentApplicationApiController {
                 throw new RuntimeException("获取或创建用户失败: " + e.getMessage());
             }
 
-            // 3. 创建申请
-            System.out.println("3. 创建申请");
+            // 3. 获取或创建学生记录
+            System.out.println("3. 获取或创建学生记录");
+            Student student = null;
+            try {
+                student = studentRepository.findByUser(user);
+                if (student == null) {
+                    System.out.println("学生记录不存在，创建新学生记录");
+                    student = new Student();
+                    student.setUser(user);
+                    student.setStudentId("STU" + System.currentTimeMillis());
+                    student.setMajor("未设置");
+                    // 先保存用户，确保用户ID已经生成
+                    if (user.getId() == null) {
+                        System.out.println("用户ID为null，重新保存用户");
+                        user = userRepository.save(user);
+                        System.out.println("重新保存用户成功，userId: " + user.getId());
+                        student.setUser(user);
+                    }
+                    student = studentRepository.save(student);
+                    System.out.println("创建学生记录成功，studentId: " + student.getId());
+                } else {
+                    System.out.println("学生记录已存在，studentId: " + student.getId());
+                }
+            } catch (Exception e) {
+                System.out.println("获取或创建学生记录失败: " + e.getMessage());
+                e.printStackTrace();
+                throw new RuntimeException("获取或创建学生记录失败: " + e.getMessage());
+            }
+
+            // 4. 检查是否已经申请过该岗位
+            System.out.println("4. 检查是否已经申请过该岗位");
+            try {
+                List<Application> existingApplications = applicationRepository.findByStudent(student);
+                System.out.println("当前学生的申请记录数量: " + existingApplications.size());
+                boolean alreadyApplied = existingApplications.stream()
+                        .anyMatch(app -> {
+                            if (app.getJob() == null) {
+                                System.out.println("申请记录中的job为null");
+                                return false;
+                            }
+                            boolean match = app.getJob().getId().equals(jobId);
+                            if (match) {
+                                System.out.println("已经申请过该岗位，jobId: " + jobId);
+                            }
+                            return match;
+                        });
+                if (alreadyApplied) {
+                    throw new RuntimeException("已经申请过该岗位");
+                }
+            } catch (Exception e) {
+                System.out.println("检查申请记录失败: " + e.getMessage());
+                e.printStackTrace();
+                throw new RuntimeException("检查申请记录失败: " + e.getMessage());
+            }
+
+            // 5. 创建申请
+            System.out.println("5. 创建申请");
             Application application = new Application();
-            application.setStudent(user); // 使用User作为Student
+            application.setStudent(student); // 使用Student作为学生
             application.setJob(job);
             application.setStatus("PENDING");
             application.setApplyDate(new Date());
-            System.out.println("申请对象创建成功，studentId: " + user.getId() + ", jobId: " + job.getId());
+            System.out.println("申请对象创建成功，studentId: " + student.getId() + ", jobId: " + job.getId());
 
-            // 4. 保存申请
-            System.out.println("4. 保存申请");
-            System.out.println("准备保存申请，studentId: " + user.getId() + ", jobId: " + job.getId());
+            // 6. 保存申请
+            System.out.println("6. 保存申请");
+            System.out.println("准备保存申请，studentId: " + student.getId() + ", jobId: " + job.getId());
             Application savedApplication = null;
             try {
                 savedApplication = applicationRepository.save(application);
@@ -125,6 +189,12 @@ public class StudentApplicationApiController {
         } catch (Exception e) {
             System.out.println("申请失败: " + e.getMessage());
             e.printStackTrace();
+            // 打印完整的堆栈跟踪
+            StringBuilder sb = new StringBuilder();
+            for (StackTraceElement element : e.getStackTrace()) {
+                sb.append(element.toString()).append("\n");
+            }
+            System.out.println("堆栈跟踪: " + sb.toString());
             // 返回一个空的申请对象，避免服务崩溃
             Application errorApplication = new Application();
             errorApplication.setStatus("ERROR");
@@ -137,26 +207,45 @@ public class StudentApplicationApiController {
     @GetMapping("/student")
     public List<Application> getStudentApplications(Authentication authentication) {
         try {
-            // 暂时跳过认证，直接返回所有申请
-            // 实际应用中，应该根据具体的业务逻辑处理认证
-
-            // 1. 获取或创建用户
-            User user = userRepository.findByUsername("test");
-            if (user == null) {
-                user = new User();
-                user.setUsername("test");
-                user.setPassword("test");
-                user.setRole("STUDENT");
-                user.setName("测试学生");
-                user.setActive(true);
-                user = userRepository.save(user);
+            // 1. 获取当前登录用户
+            User user = null;
+            if (authentication != null && authentication.getName() != null) {
+                System.out.println("使用认证用户: " + authentication.getName());
+                user = userRepository.findByUsername(authentication.getName());
             }
 
-            // 2. 获取学生的所有申请
-            List<Application> applications = applicationRepository.findByStudent(user);
+            // 认证失败，抛出错误
+            if (user == null) {
+                System.out.println("未找到认证用户");
+                throw new RuntimeException("用户未认证，请先登录");
+            }
+
+            // 2. 获取学生对象
+            Student student = studentRepository.findByUser(user);
+            if (student == null) {
+                System.out.println("学生记录不存在，创建新学生记录");
+                student = new Student();
+                student.setUser(user);
+                student.setStudentId("STU" + System.currentTimeMillis());
+                student.setMajor("未设置");
+                // 先保存用户，确保用户ID已经生成
+                if (user.getId() == null) {
+                    System.out.println("用户ID为null，重新保存用户");
+                    user = userRepository.save(user);
+                    System.out.println("重新保存用户成功，userId: " + user.getId());
+                    student.setUser(user);
+                }
+                student = studentRepository.save(student);
+                System.out.println("创建学生记录成功，studentId: " + student.getId());
+            } else {
+                System.out.println("学生记录已存在，studentId: " + student.getId());
+            }
+
+            // 3. 获取学生的所有申请
+            List<Application> applications = applicationRepository.findByStudent(student);
             System.out.println("获取到 " + applications.size() + " 个申请记录");
 
-            // 3. 确保 job 和 company 对象被加载
+            // 4. 确保 job 和 company 对象被加载
             for (Application application : applications) {
                 if (application.getJob() != null) {
                     System.out.println("申请 ID: " + application.getId() + ", 岗位 ID: " + application.getJob().getId()

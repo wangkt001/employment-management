@@ -8,6 +8,7 @@ import com.employment.repository.JobRepository;
 import com.employment.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
@@ -26,24 +27,30 @@ public class CompanyJobApiController {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     // 获取企业的所有岗位
     @GetMapping
     public List<Job> getJobs(Authentication authentication) {
         try {
-            if (authentication == null) {
-                // 暂时返回所有岗位，方便测试
-                return jobRepository.findAll();
+            if (authentication == null || authentication.getName() == null) {
+                System.out.println("未找到认证用户");
+                return List.of();
             }
             User user = userRepository.findByUsername(authentication.getName());
             if (user == null) {
+                System.out.println("用户不存在");
                 return List.of();
             }
             Company company = companyRepository.findByUserId(user.getId());
             if (company == null) {
+                System.out.println("公司不存在");
                 return List.of();
             }
             return jobRepository.findByCompanyId(company.getId());
         } catch (Exception e) {
+            e.printStackTrace();
             return List.of();
         }
     }
@@ -54,26 +61,29 @@ public class CompanyJobApiController {
         System.out.println("开始创建岗位...");
         System.out.println("请求参数: " + jobRequest.toString());
         try {
-            // 暂时跳过认证，直接创建一个测试岗位
-            // 实际应用中，应该根据具体的业务逻辑处理认证
-
             // 1. 获取或创建用户
             System.out.println("步骤1: 获取或创建用户");
             try {
-                User user = userRepository.findByUsername("test");
-                if (user == null) {
-                    System.out.println("用户不存在，创建新用户");
-                    user = new User();
-                    user.setUsername("test");
-                    user.setPassword("test");
-                    user.setRole("COMPANY");
-                    user.setName("测试用户");
-                    user.setActive(true);
-                    System.out.println("准备保存用户");
-                    user = userRepository.save(user);
-                    System.out.println("创建用户成功，ID: " + user.getId());
+                User user = null;
+                if (authentication != null && authentication.getName() != null) {
+                    System.out.println("使用认证用户: " + authentication.getName());
+                    user = userRepository.findByUsername(authentication.getName());
+                    if (user == null) {
+                        System.out.println("用户不存在，创建新用户");
+                        user = new User();
+                        user.setUsername(authentication.getName());
+                        user.setPassword(passwordEncoder.encode("default123"));
+                        user.setRole("COMPANY");
+                        user.setName(authentication.getName());
+                        user.setActive(true);
+                        user = userRepository.save(user);
+                        System.out.println("创建用户成功，ID: " + user.getId());
+                    } else {
+                        System.out.println("用户已存在，ID: " + user.getId());
+                    }
                 } else {
-                    System.out.println("用户已存在，ID: " + user.getId());
+                    System.out.println("未找到认证用户");
+                    throw new RuntimeException("用户未认证，请先登录");
                 }
 
                 // 2. 获取或创建公司
@@ -134,34 +144,38 @@ public class CompanyJobApiController {
         System.out.println("岗位ID: " + id);
         System.out.println("请求参数: " + jobRequest.toString());
         try {
-            // 暂时跳过认证，方便测试
-            // 实际应用中，应该根据具体的业务逻辑处理认证
-
-            // 1. 获取或创建测试用户（与创建岗位保持一致）
-            System.out.println("步骤1: 获取测试用户");
-            User user = userRepository.findByUsername("test");
-            if (user == null) {
-                System.out.println("用户不存在，创建新用户");
-                user = new User();
-                user.setUsername("test");
-                user.setPassword("test");
-                user.setRole("COMPANY");
-                user.setName("测试用户");
-                user.setActive(true);
-                user = userRepository.save(user);
-                System.out.println("创建用户成功，ID: " + user.getId());
+            // 1. 获取认证用户
+            System.out.println("步骤1: 获取认证用户");
+            User user = null;
+            if (authentication != null && authentication.getName() != null) {
+                System.out.println("使用认证用户: " + authentication.getName());
+                user = userRepository.findByUsername(authentication.getName());
+                if (user == null) {
+                    System.out.println("用户不存在，创建新用户");
+                    user = new User();
+                    user.setUsername(authentication.getName());
+                    user.setPassword(passwordEncoder.encode("default123"));
+                    user.setRole("COMPANY");
+                    user.setName(authentication.getName());
+                    user.setActive(true);
+                    user = userRepository.save(user);
+                    System.out.println("创建用户成功，ID: " + user.getId());
+                } else {
+                    System.out.println("用户已存在，ID: " + user.getId());
+                }
             } else {
-                System.out.println("用户已存在，ID: " + user.getId());
+                System.out.println("未找到认证用户");
+                throw new RuntimeException("用户未认证，请先登录");
             }
 
-            // 2. 获取或创建测试公司
-            System.out.println("步骤2: 获取测试公司");
+            // 2. 获取或创建公司
+            System.out.println("步骤2: 获取或创建公司");
             Company company = companyRepository.findByUserId(user.getId());
             if (company == null) {
                 System.out.println("公司不存在，创建新公司");
                 company = new Company();
                 company.setUser(user);
-                company.setCompanyName("测试公司");
+                company.setCompanyName(user.getName() + "公司");
                 company.setVerified(true);
                 company = companyRepository.save(company);
                 System.out.println("创建公司成功，ID: " + company.getId());
@@ -212,34 +226,38 @@ public class CompanyJobApiController {
         System.out.println("开始删除岗位...");
         System.out.println("岗位ID: " + id);
         try {
-            // 暂时跳过认证，方便测试
-            // 实际应用中，应该根据具体的业务逻辑处理认证
-
-            // 1. 获取或创建测试用户（与创建岗位保持一致）
-            System.out.println("步骤1: 获取测试用户");
-            User user = userRepository.findByUsername("test");
-            if (user == null) {
-                System.out.println("用户不存在，创建新用户");
-                user = new User();
-                user.setUsername("test");
-                user.setPassword("test");
-                user.setRole("COMPANY");
-                user.setName("测试用户");
-                user.setActive(true);
-                user = userRepository.save(user);
-                System.out.println("创建用户成功，ID: " + user.getId());
+            // 1. 获取认证用户
+            System.out.println("步骤1: 获取认证用户");
+            User user = null;
+            if (authentication != null && authentication.getName() != null) {
+                System.out.println("使用认证用户: " + authentication.getName());
+                user = userRepository.findByUsername(authentication.getName());
+                if (user == null) {
+                    System.out.println("用户不存在，创建新用户");
+                    user = new User();
+                    user.setUsername(authentication.getName());
+                    user.setPassword(passwordEncoder.encode("default123"));
+                    user.setRole("COMPANY");
+                    user.setName(authentication.getName());
+                    user.setActive(true);
+                    user = userRepository.save(user);
+                    System.out.println("创建用户成功，ID: " + user.getId());
+                } else {
+                    System.out.println("用户已存在，ID: " + user.getId());
+                }
             } else {
-                System.out.println("用户已存在，ID: " + user.getId());
+                System.out.println("未找到认证用户");
+                throw new RuntimeException("用户未认证，请先登录");
             }
 
-            // 2. 获取或创建测试公司
-            System.out.println("步骤2: 获取测试公司");
+            // 2. 获取或创建公司
+            System.out.println("步骤2: 获取或创建公司");
             Company company = companyRepository.findByUserId(user.getId());
             if (company == null) {
                 System.out.println("公司不存在，创建新公司");
                 company = new Company();
                 company.setUser(user);
-                company.setCompanyName("测试公司");
+                company.setCompanyName(user.getName() + "公司");
                 company.setVerified(true);
                 company = companyRepository.save(company);
                 System.out.println("创建公司成功，ID: " + company.getId());
@@ -278,11 +296,31 @@ public class CompanyJobApiController {
         System.out.println("岗位ID: " + id);
         System.out.println("新状态: " + active);
         try {
-            // 暂时跳过认证，方便测试
-            // 实际应用中，应该根据具体的业务逻辑处理认证
+            // 1. 获取认证用户
+            System.out.println("步骤1: 获取认证用户");
+            User user = null;
+            if (authentication != null && authentication.getName() != null) {
+                System.out.println("使用认证用户: " + authentication.getName());
+                user = userRepository.findByUsername(authentication.getName());
+                if (user == null) {
+                    System.out.println("用户不存在");
+                    throw new RuntimeException("用户不存在");
+                }
+            } else {
+                System.out.println("未找到认证用户");
+                throw new RuntimeException("用户未认证，请先登录");
+            }
 
-            // 1. 查找岗位
-            System.out.println("步骤1: 查找岗位");
+            // 2. 获取公司
+            System.out.println("步骤2: 获取公司");
+            Company company = companyRepository.findByUserId(user.getId());
+            if (company == null) {
+                System.out.println("公司不存在");
+                throw new RuntimeException("公司不存在");
+            }
+
+            // 3. 查找岗位
+            System.out.println("步骤3: 查找岗位");
             Job job = jobRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("岗位不存在"));
             System.out.println("找到岗位，ID: " + job.getId());
@@ -290,14 +328,22 @@ public class CompanyJobApiController {
                 System.out.println("公司ID: " + job.getCompany().getId());
             } else {
                 System.out.println("岗位没有关联公司");
+                throw new RuntimeException("岗位没有关联公司");
             }
 
-            // 2. 切换岗位状态
-            System.out.println("步骤2: 切换岗位状态");
+            // 4. 验证权限
+            System.out.println("步骤4: 验证权限");
+            if (!job.getCompany().getId().equals(company.getId())) {
+                System.out.println("无权操作此岗位");
+                throw new RuntimeException("无权操作此岗位");
+            }
+
+            // 5. 切换岗位状态
+            System.out.println("步骤5: 切换岗位状态");
             job.setActive(active);
 
-            // 3. 保存更新
-            System.out.println("步骤3: 保存更新");
+            // 6. 保存更新
+            System.out.println("步骤6: 保存更新");
             Job updatedJob = jobRepository.save(job);
             System.out.println("岗位状态切换成功，ID: " + updatedJob.getId() + "，新状态: " + updatedJob.isActive());
 
