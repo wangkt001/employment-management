@@ -9,7 +9,6 @@ import com.employment.repository.JobRepository;
 import com.employment.repository.StudentRepository;
 import com.employment.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -37,13 +36,20 @@ public class StudentApplicationApiController {
 
     // 申请岗位
     @PostMapping("/job/{jobId}")
-    public Application applyForJob(@PathVariable Long jobId, Authentication authentication) {
+    public Application applyForJob(@PathVariable Long jobId, @RequestParam Long userId) {
         System.out.println("===========================================");
-        System.out.println("接收到申请岗位请求，jobId: " + jobId);
+        System.out.println("接收到申请岗位请求，jobId: " + jobId + ", userId: " + userId);
         System.out.println("===========================================");
         try {
-            // 1. 查找岗位
-            System.out.println("1. 查找岗位，jobId: " + jobId);
+            // 1. 校验用户ID
+            System.out.println("1. 校验用户ID");
+            if (userId == null) {
+                System.out.println("用户ID不能为空");
+                throw new RuntimeException("用户ID不能为空");
+            }
+
+            // 2. 查找岗位
+            System.out.println("2. 查找岗位，jobId: " + jobId);
             Job job = null;
             try {
                 System.out.println("尝试通过ID查找岗位: " + jobId);
@@ -69,35 +75,21 @@ public class StudentApplicationApiController {
                 throw new RuntimeException("查找岗位失败: " + e.getMessage());
             }
 
-            // 2. 获取当前登录用户
-            System.out.println("2. 获取当前登录用户");
+            // 3. 获取用户
+            System.out.println("3. 获取用户，userId: " + userId);
             User user = null;
             try {
-                if (authentication != null && authentication.getName() != null) {
-                    System.out.println("使用认证用户: " + authentication.getName());
-                    user = userRepository.findByUsername(authentication.getName());
-                    if (user == null) {
-                        System.out.println("用户不存在，创建新用户");
-                        user = new User();
-                        user.setUsername(authentication.getName());
-                        user.setPassword(passwordEncoder.encode("default123")); // 使用加密密码
-                        user.setRole("STUDENT");
-                        user.setName(authentication.getName());
-                        user.setActive(true);
-                        user = userRepository.save(user);
-                        System.out.println("创建用户成功，userId: " + user.getId());
-                    } else {
-                        System.out.println("用户已存在，userId: " + user.getId());
-                    }
+                user = userRepository.findById(userId).orElse(null);
+                if (user == null) {
+                    System.out.println("用户不存在，userId: " + userId);
+                    throw new RuntimeException("用户不存在，userId: " + userId);
                 } else {
-                    // 认证失败，抛出错误
-                    System.out.println("未找到认证用户");
-                    throw new RuntimeException("用户未认证，请先登录");
+                    System.out.println("用户已存在，userId: " + user.getId() + ", username: " + user.getUsername());
                 }
             } catch (Exception e) {
-                System.out.println("获取或创建用户失败: " + e.getMessage());
+                System.out.println("获取用户失败: " + e.getMessage());
                 e.printStackTrace();
-                throw new RuntimeException("获取或创建用户失败: " + e.getMessage());
+                throw new RuntimeException("获取用户失败: " + e.getMessage());
             }
 
             // 3. 获取或创建学生记录
@@ -205,20 +197,24 @@ public class StudentApplicationApiController {
 
     // 获取学生的所有申请
     @GetMapping("/student")
-    public List<Application> getStudentApplications(Authentication authentication) {
+    public List<Application> getStudentApplications(@RequestParam Long userId) {
         try {
-            // 1. 获取当前登录用户
-            User user = null;
-            if (authentication != null && authentication.getName() != null) {
-                System.out.println("使用认证用户: " + authentication.getName());
-                user = userRepository.findByUsername(authentication.getName());
+            // 1. 校验用户ID
+            System.out.println("1. 校验用户ID");
+            if (userId == null) {
+                System.out.println("用户ID不能为空");
+                throw new RuntimeException("用户ID不能为空");
             }
 
-            // 认证失败，抛出错误
+            // 2. 获取用户
+            System.out.println("2. 获取用户，userId: " + userId);
+            User user = null;
+            user = userRepository.findById(userId).orElse(null);
             if (user == null) {
-                System.out.println("未找到认证用户");
-                throw new RuntimeException("用户未认证，请先登录");
+                System.out.println("用户不存在，userId: " + userId);
+                throw new RuntimeException("用户不存在，userId: " + userId);
             }
+            System.out.println("用户已存在，userId: " + user.getId() + ", username: " + user.getUsername());
 
             // 2. 获取学生对象
             Student student = studentRepository.findByUser(user);

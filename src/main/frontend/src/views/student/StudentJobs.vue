@@ -244,6 +244,7 @@ const sidebarCollapsed = ref(false);
 // 从本地存储获取用户信息
 const username = ref(localStorage.getItem("username") || "学生");
 const role = ref(localStorage.getItem("role") || "STUDENT");
+const userId = ref(localStorage.getItem("userId") || null);
 
 // 搜索和筛选
 const searchKeyword = ref("");
@@ -447,12 +448,17 @@ const applyForJob = async (jobId) => {
     return;
   }
 
-  console.log("申请岗位参数:", { jobId });
+  if (!userId.value) {
+    alert("用户信息有误，无法申请");
+    return;
+  }
+
+  console.log("申请岗位参数:", { jobId, userId: userId.value });
 
   if (confirm("确定要申请这个岗位吗？")) {
     try {
       const response = await fetch(
-        `/employment/api/applications/job/${jobId}`,
+        `/employment/api/applications/job/${jobId}?userId=${userId.value}`,
         {
           method: "POST",
           credentials: "include",
@@ -462,7 +468,8 @@ const applyForJob = async (jobId) => {
         alert("申请成功！");
         closeJobDetail();
       } else {
-        alert("申请失败，请稍后重试");
+        const errorData = await response.json().catch(() => ({}));
+        alert("申请失败: " + (errorData.message || "请稍后重试"));
       }
     } catch (err) {
       console.error("申请岗位失败:", err);

@@ -129,12 +129,14 @@ const login = async () => {
 
             // 存储用户信息
             localStorage.setItem("username", user.username);
+            localStorage.setItem("userId", user.id.toString());
             localStorage.setItem("isAdmin", isAdmin.toString());
             localStorage.setItem("isStudent", isStudent.toString());
             localStorage.setItem("isCompany", isCompany.toString());
 
             console.log("登录成功，localStorage存储:", {
               username: localStorage.getItem("username"),
+              userId: localStorage.getItem("userId"),
               isAdmin: localStorage.getItem("isAdmin"),
               isStudent: localStorage.getItem("isStudent"),
               isCompany: localStorage.getItem("isCompany"),

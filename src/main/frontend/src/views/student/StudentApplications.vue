@@ -143,6 +143,54 @@
             />
           </div>
         </div>
+
+        <!-- 申请详情模态框 -->
+        <div
+          v-if="showApplicationDetail"
+          class="modal-overlay"
+          @click="closeApplicationDetail"
+        >
+          <div class="modal-content" @click.stop>
+            <div class="modal-header">
+              <h3>申请详情</h3>
+              <button class="close-button" @click="closeApplicationDetail">
+                <i class="i-ep-close"></i>
+              </button>
+            </div>
+            <div class="modal-body">
+              <div class="detail-item">
+                <label>申请ID:</label>
+                <span>{{ selectedApplication?.id }}</span>
+              </div>
+              <div class="detail-item">
+                <label>岗位名称:</label>
+                <span>{{ selectedApplication?.jobTitle }}</span>
+              </div>
+              <div class="detail-item">
+                <label>公司名称:</label>
+                <span>{{ selectedApplication?.companyName }}</span>
+              </div>
+              <div class="detail-item">
+                <label>申请状态:</label>
+                <el-tag :type="getStatusType(selectedApplication?.status)">
+                  {{ getStatusText(selectedApplication?.status) }}
+                </el-tag>
+              </div>
+              <div class="detail-item">
+                <label>申请日期:</label>
+                <span>{{ selectedApplication?.appliedDate }}</span>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button
+                class="action-button cancel-button"
+                @click="closeApplicationDetail"
+              >
+                关闭
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
   </div>
@@ -161,6 +209,7 @@ const sidebarCollapsed = ref(false);
 // 从本地存储获取用户信息
 const username = ref(localStorage.getItem("username") || "学生");
 const role = ref(localStorage.getItem("role") || "STUDENT");
+const userId = ref(localStorage.getItem("userId") || null);
 
 // 页面状态
 const currentPage = ref(1);
@@ -174,12 +223,21 @@ const error = ref("");
 
 // 加载申请数据
 const fetchApplications = async () => {
+  if (!userId.value) {
+    error.value = "用户信息有误，无法获取申请数据";
+    isLoading.value = false;
+    return;
+  }
+
   isLoading.value = true;
   error.value = "";
   try {
-    const response = await fetch("/employment/api/applications/student", {
-      credentials: "include",
-    });
+    const response = await fetch(
+      `/employment/api/applications/student?userId=${userId.value}`,
+      {
+        credentials: "include",
+      },
+    );
     if (response.ok) {
       const data = await response.json();
       // 转换后端数据格式以匹配前端需求
@@ -193,7 +251,8 @@ const fetchApplications = async () => {
           : new Date().toISOString().split("T")[0],
       }));
     } else {
-      error.value = "获取申请数据失败";
+      const errorData = await response.json().catch(() => ({}));
+      error.value = "获取申请数据失败: " + (errorData.message || "请稍后重试");
     }
   } catch (err) {
     console.error("获取申请数据失败:", err);
@@ -273,9 +332,19 @@ const getStatusText = (status) => {
 };
 
 // 查看申请详情
+const showApplicationDetail = ref(false);
+const selectedApplication = ref(null);
+
 const viewApplication = (application) => {
   console.log("查看申请:", application);
-  // 这里可以跳转到申请详情页面
+  selectedApplication.value = application;
+  showApplicationDetail.value = true;
+};
+
+// 关闭申请详情
+const closeApplicationDetail = () => {
+  showApplicationDetail.value = false;
+  selectedApplication.value = null;
 };
 
 // 取消申请
@@ -498,5 +567,115 @@ onMounted(async () => {
   .pagination {
     justify-content: center;
   }
+}
+
+/* 申请详情模态框 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #e9ecef;
+  background: #f8f9fa;
+  border-radius: 8px 8px 0 0;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #666;
+  transition: color 0.3s ease;
+}
+
+.close-button:hover {
+  color: #333;
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.detail-item {
+  display: flex;
+  margin-bottom: 16px;
+  align-items: center;
+}
+
+.detail-item label {
+  width: 100px;
+  font-weight: 500;
+  color: #333;
+  flex-shrink: 0;
+}
+
+.detail-item span {
+  color: #666;
+}
+
+/* 申请状态标签样式 */
+.detail-item .el-tag {
+  padding: 2px 4px !important;
+  font-size: 12px !important;
+  border-radius: 2px !important;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 20px;
+  border-top: 1px solid #e9ecef;
+  background: #f8f9fa;
+  border-radius: 0 0 8px 8px;
+}
+
+.action-button {
+  padding: 8px 16px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.cancel-button {
+  background: white;
+  color: #333;
+}
+
+.cancel-button:hover {
+  background: #f8f9fa;
+  border-color: #adb5bd;
 }
 </style>
