@@ -1,0 +1,53 @@
+# 构建产物
+target/
+BOOT-INF/
+src/main/resources/static/
+
+# 前端构建产物
+src/main/frontend/dist/
+
+# 依赖管理
+src/main/frontend/node_modules/
+src/main/frontend/package-lock.json
+
+# Node.js可执行文件
+src/main/frontend/node/
+
+# 编辑器和IDE相关
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 系统和临时文件
+Thumbs.db
+.DS_Store
+*.log
+logs/
+tmp/
+temp/
+*.tmp
+*.temp
+
+# 环境配置文件
+.env
+.env.local
+.env.*.local
+
+# 数据库文件
+*.db
+*.sqlite
+*.sqlite3
+
+# Java相关
+*.class
+*.jar
+*.war
+*.ear
+
+# Maven相关
+.mvn/
+
+# 构建脚本
+start.bat
