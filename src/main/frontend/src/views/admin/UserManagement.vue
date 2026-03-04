@@ -139,7 +139,7 @@
                     size="small"
                     type="primary"
                     plain
-                    @click="editUser(scope.row)"
+                    @click="editUserHandler(scope.row)"
                     class="action-btn edit-btn"
                   >
                     编辑
@@ -211,9 +211,28 @@
               required
               placeholder="请选择角色"
             >
-              <el-option value="ADMIN">管理员</el-option>
-              <el-option value="STUDENT">学生</el-option>
-              <el-option value="COMPANY">企业</el-option>
+              <el-option label="管理员" value="ADMIN"></el-option>
+              <el-option label="学生" value="STUDENT"></el-option>
+              <el-option label="企业" value="COMPANY"></el-option>
+            </el-select>
+          </div>
+          <div class="form-group" v-if="newUser.role === 'COMPANY'">
+            <label for="new-company">关联企业</label>
+            <el-select
+              id="new-company"
+              v-model="newUser.companyId"
+              required
+              placeholder="请选择企业"
+              :loading="isLoadingCompanies"
+            >
+              <el-option
+                v-for="company in companies"
+                :key="company.id"
+                :value="company.id"
+                :label="company.companyName"
+              >
+                {{ company.companyName }}
+              </el-option>
             </el-select>
           </div>
           <div class="form-group">
@@ -255,6 +274,105 @@
           </span>
         </template>
       </el-dialog>
+
+      <!-- 编辑用户对话框 -->
+      <el-dialog
+        v-model="showEditUserDialog"
+        title="编辑用户"
+        width="500px"
+        @close="closeEditUserDialog"
+      >
+        <form @submit.prevent="updateUser" class="user-form">
+          <div class="form-group">
+            <label for="edit-username">用户名</label>
+            <el-input
+              type="text"
+              id="edit-username"
+              v-model="editUser.username"
+              required
+              placeholder="请输入用户名"
+            />
+          </div>
+          <div class="form-group">
+            <label for="edit-name">姓名</label>
+            <el-input
+              type="text"
+              id="edit-name"
+              v-model="editUser.name"
+              required
+              placeholder="请输入姓名"
+            />
+          </div>
+          <div class="form-group">
+            <label for="edit-role">角色</label>
+            <el-select
+              id="edit-role"
+              v-model="editUser.role"
+              required
+              placeholder="请选择角色"
+            >
+              <el-option label="管理员" value="ADMIN"></el-option>
+              <el-option label="学生" value="STUDENT"></el-option>
+              <el-option label="企业" value="COMPANY"></el-option>
+            </el-select>
+          </div>
+          <div class="form-group" v-if="editUser.role === 'COMPANY'">
+            <label for="edit-company">关联企业</label>
+            <el-select
+              id="edit-company"
+              v-model="editUser.companyId"
+              required
+              placeholder="请选择企业"
+              :loading="isLoadingCompanies"
+            >
+              <el-option
+                v-for="company in companies"
+                :key="company.id"
+                :value="company.id"
+                :label="company.companyName"
+              >
+                {{ company.companyName }}
+              </el-option>
+            </el-select>
+          </div>
+          <div class="form-group">
+            <label for="edit-email">邮箱</label>
+            <el-input
+              type="email"
+              id="edit-email"
+              v-model="editUser.email"
+              required
+              placeholder="请输入邮箱"
+            />
+          </div>
+          <div class="form-group">
+            <label for="edit-phone">电话</label>
+            <el-input
+              type="tel"
+              id="edit-phone"
+              v-model="editUser.phone"
+              required
+              placeholder="请输入电话"
+            />
+          </div>
+          <div class="form-group">
+            <label for="edit-password">密码（留空不修改）</label>
+            <el-input
+              type="password"
+              id="edit-password"
+              v-model="editUser.password"
+              placeholder="请输入密码"
+              show-password
+            />
+          </div>
+        </form>
+        <template #footer>
+          <span class="dialog-footer">
+            <el-button @click="closeEditUserDialog">取消</el-button>
+            <el-button type="primary" @click="updateUser">保存</el-button>
+          </span>
+        </template>
+      </el-dialog>
     </main>
   </div>
 </template>
@@ -282,6 +400,9 @@ const statusFilter = ref("all");
 
 // 模态框状态
 const showAddUserDialog = ref(false);
+const showEditUserDialog = ref(false);
+
+// 新用户表单数据
 const newUser = ref({
   username: "",
   name: "",
@@ -289,12 +410,29 @@ const newUser = ref({
   email: "",
   phone: "",
   password: "",
+  companyId: null,
+});
+
+// 编辑用户表单数据
+const editUser = ref({
+  id: null,
+  username: "",
+  name: "",
+  role: "STUDENT",
+  email: "",
+  phone: "",
+  password: "",
+  companyId: null,
 });
 
 // 用户数据
 const users = ref([]);
 const isLoading = ref(false);
 const error = ref("");
+
+// 企业数据
+const companies = ref([]);
+const isLoadingCompanies = ref(false);
 
 // 加载用户数据
 const loadUsers = async () => {
@@ -314,6 +452,29 @@ const loadUsers = async () => {
     error.value = "网络错误，请稍后重试";
   } finally {
     isLoading.value = false;
+  }
+};
+
+// 加载企业数据
+const loadCompanies = async () => {
+  isLoadingCompanies.value = true;
+  try {
+    const response = await fetch(
+      "/employment/api/admin/companies?page=1&size=100",
+      {
+        credentials: "include",
+      },
+    );
+    if (response.ok) {
+      const data = await response.json();
+      companies.value = data.companies;
+    } else {
+      console.error("获取企业数据失败");
+    }
+  } catch (err) {
+    console.error("获取企业数据失败:", err);
+  } finally {
+    isLoadingCompanies.value = false;
   }
 };
 
@@ -434,6 +595,7 @@ const closeAddUserDialog = () => {
     email: "",
     phone: "",
     password: "",
+    companyId: null,
   };
 };
 
@@ -467,9 +629,84 @@ const addUser = async () => {
 };
 
 // 编辑用户
-const editUser = (user) => {
+const editUserHandler = (user) => {
   console.log("编辑用户:", user);
-  // 这里可以打开编辑对话框或跳转到编辑页面
+  // 填充编辑表单数据
+  editUser.value = {
+    id: user.id,
+    username: user.username,
+    name: user.name,
+    role: user.role, // 保持原始值，el-select会根据value显示对应的label
+    email: user.email,
+    phone: user.phone,
+    password: "", // 密码留空，不修改
+    companyId: user.companyId || null,
+  };
+  // 打开编辑对话框
+  showEditUserDialog.value = true;
+};
+
+// 关闭编辑用户对话框
+const closeEditUserDialog = () => {
+  showEditUserDialog.value = false;
+  // 重置表单
+  editUser.value = {
+    id: null,
+    username: "",
+    name: "",
+    role: "STUDENT",
+    email: "",
+    phone: "",
+    password: "",
+    companyId: null,
+  };
+};
+
+// 更新用户
+const updateUser = async () => {
+  try {
+    // 构建更新数据，排除空密码
+    const updateData = {
+      username: editUser.value.username,
+      name: editUser.value.name,
+      role: editUser.value.role,
+      email: editUser.value.email,
+      phone: editUser.value.phone,
+      companyId: editUser.value.companyId,
+    };
+
+    // 如果密码不为空，则包含密码
+    if (editUser.value.password) {
+      updateData.password = editUser.value.password;
+    }
+
+    const response = await fetch(
+      `/employment/api/admin/users/${editUser.value.id}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updateData),
+        credentials: "include",
+      },
+    );
+
+    if (response.ok) {
+      // 重新加载用户列表
+      await loadUsers();
+      // 关闭对话框
+      closeEditUserDialog();
+      // 显示成功提示
+      alert("用户编辑成功！");
+    } else {
+      const error = await response.text();
+      alert("编辑用户失败: " + error);
+    }
+  } catch (error) {
+    console.error("编辑用户失败:", error);
+    alert("编辑用户失败: " + error.message);
+  }
 };
 
 // 删除用户
@@ -549,8 +786,8 @@ const handleCurrentChange = (page) => {
 onMounted(async () => {
   // 页面加载时的初始化逻辑
   console.log("User Management mounted");
-  // 加载用户数据
-  await loadUsers();
+  // 加载用户数据和企业数据
+  await Promise.all([loadUsers(), loadCompanies()]);
 });
 </script>
 

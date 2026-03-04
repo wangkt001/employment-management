@@ -13,6 +13,7 @@
       <TopNav
         title="申请管理"
         :username="username"
+        :role="role"
         @toggle-sidebar="toggleSidebar"
       />
 
@@ -70,7 +71,9 @@
           <StatusStates
             :is-loading="isLoading"
             :error="error"
-            :is-empty="!isLoading && !error && filteredApplications.length === 0"
+            :is-empty="
+              !isLoading && !error && filteredApplications.length === 0
+            "
             @retry="fetchApplications"
           />
 
@@ -106,10 +109,7 @@
             </el-table-column>
             <el-table-column prop="status" label="状态" width="100">
               <template #default="scope">
-                <el-tag
-                  :type="getStatusTagType(scope.row.status)"
-                  size="small"
-                >
+                <el-tag :type="getStatusTagType(scope.row.status)" size="small">
                   {{ getStatusText(scope.row.status) }}
                 </el-tag>
               </template>
@@ -179,11 +179,21 @@
       >
         <div v-if="selectedApplication" class="application-details">
           <el-descriptions title="申请信息" border>
-            <el-descriptions-item label="申请ID">{{ selectedApplication.id }}</el-descriptions-item>
-            <el-descriptions-item label="申请人">{{ selectedApplication.applicantName }}</el-descriptions-item>
-            <el-descriptions-item label="申请岗位">{{ selectedApplication.jobTitle }}</el-descriptions-item>
-            <el-descriptions-item label="申请日期">{{ selectedApplication.appliedDate }}</el-descriptions-item>
-            <el-descriptions-item label="状态">{{ getStatusText(selectedApplication.status) }}</el-descriptions-item>
+            <el-descriptions-item label="申请ID">{{
+              selectedApplication.id
+            }}</el-descriptions-item>
+            <el-descriptions-item label="申请人">{{
+              selectedApplication.applicantName
+            }}</el-descriptions-item>
+            <el-descriptions-item label="申请岗位">{{
+              selectedApplication.jobTitle
+            }}</el-descriptions-item>
+            <el-descriptions-item label="申请日期">{{
+              selectedApplication.appliedDate
+            }}</el-descriptions-item>
+            <el-descriptions-item label="状态">{{
+              getStatusText(selectedApplication.status)
+            }}</el-descriptions-item>
             <el-descriptions-item label="简历" span="2">
               <el-button
                 type="primary"
@@ -196,12 +206,24 @@
           </el-descriptions>
           <el-divider />
           <el-descriptions title="申请人信息" border>
-            <el-descriptions-item label="姓名">{{ selectedApplication.applicantName }}</el-descriptions-item>
-            <el-descriptions-item label="专业">{{ selectedApplication.major || '未填写' }}</el-descriptions-item>
-            <el-descriptions-item label="学历">{{ selectedApplication.education || '未填写' }}</el-descriptions-item>
-            <el-descriptions-item label="毕业院校">{{ selectedApplication.school || '未填写' }}</el-descriptions-item>
-            <el-descriptions-item label="联系方式">{{ selectedApplication.contact || '未填写' }}</el-descriptions-item>
-            <el-descriptions-item label="自我介绍" span="2">{{ selectedApplication.selfIntroduction || '未填写' }}</el-descriptions-item>
+            <el-descriptions-item label="姓名">{{
+              selectedApplication.applicantName
+            }}</el-descriptions-item>
+            <el-descriptions-item label="专业">{{
+              selectedApplication.major || "未填写"
+            }}</el-descriptions-item>
+            <el-descriptions-item label="学历">{{
+              selectedApplication.education || "未填写"
+            }}</el-descriptions-item>
+            <el-descriptions-item label="毕业院校">{{
+              selectedApplication.school || "未填写"
+            }}</el-descriptions-item>
+            <el-descriptions-item label="联系方式">{{
+              selectedApplication.contact || "未填写"
+            }}</el-descriptions-item>
+            <el-descriptions-item label="自我介绍" span="2">{{
+              selectedApplication.selfIntroduction || "未填写"
+            }}</el-descriptions-item>
           </el-descriptions>
         </div>
       </el-dialog>
@@ -221,7 +243,9 @@ const sidebarCollapsed = ref(false);
 
 // 从本地存储获取用户信息
 const username = ref(localStorage.getItem("username") || "企业");
-
+const role = ref(localStorage.getItem("role") || "COMPANY");
+const companyId = ref(localStorage.getItem("companyId") || null);
+console.log("公司Id companyId:", companyId.value);
 // 页面状态
 const currentPage = ref(1);
 const pageSize = ref(10);
@@ -239,62 +263,44 @@ const error = ref("");
 
 // 获取申请数据
 const fetchApplications = async () => {
+  if (!companyId.value) {
+    error.value = "公司信息有误，无法获取申请数据";
+    isLoading.value = false;
+    return;
+  }
+
   isLoading.value = true;
   error.value = "";
   try {
     // 模拟数据，实际应该从后端API获取
-    // const response = await fetch("/api/company/applications", {
-    //   credentials: "include",
-    // });
-    // if (response.ok) {
-    //   const data = await response.json();
-    //   applications.value = data;
-    // } else {
-    //   error.value = "获取申请数据失败";
-    // }
-    
-    // 模拟数据
-    applications.value = [
+    const response = await fetch(
+      `/employment/api/company/applications?companyId=${companyId.value}`,
       {
-        id: 1,
-        applicantName: "张三",
-        jobTitle: "前端开发工程师",
-        resumeUrl: "#",
-        status: "pending",
-        appliedDate: "2026-02-28",
-        major: "计算机科学与技术",
-        education: "本科",
-        school: "北京大学",
-        contact: "13800138000",
-        selfIntroduction: "我是一名计算机专业的应届毕业生，熟悉前端开发技术栈，希望能够加入贵公司。"
+        credentials: "include",
       },
-      {
-        id: 2,
-        applicantName: "李四",
-        jobTitle: "后端开发工程师",
-        resumeUrl: "#",
-        status: "approved",
-        appliedDate: "2026-02-27",
-        major: "软件工程",
-        education: "硕士",
-        school: "清华大学",
-        contact: "13900139000",
-        selfIntroduction: "我有3年后端开发经验，熟悉Java和Spring Boot框架。"
-      },
-      {
-        id: 3,
-        applicantName: "王五",
-        jobTitle: "产品经理",
-        resumeUrl: "#",
-        status: "rejected",
-        appliedDate: "2026-02-26",
-        major: "市场营销",
-        education: "本科",
-        school: "复旦大学",
-        contact: "13700137000",
-        selfIntroduction: "我有2年产品经理经验，熟悉产品设计和用户研究。"
-      }
-    ];
+    );
+    if (response.ok) {
+      const data = await response.json();
+      // 转换后端数据格式以匹配前端需求
+      applications.value = data.map((application) => ({
+        id: application.id,
+        applicantName: application.student?.user?.name || "未知申请人",
+        jobTitle: application.job?.title || "未知岗位",
+        status: application.status || "pending",
+        appliedDate: application.applyDate
+          ? new Date(application.applyDate).toISOString().split("T")[0]
+          : new Date().toISOString().split("T")[0],
+        resumeUrl: application.resumeUrl || "",
+        major: application.student?.major || "",
+        education: application.student?.education || "",
+        school: application.student?.school || "",
+        contact: application.student?.user?.phone || "",
+        selfIntroduction: application.selfIntroduction || "",
+      }));
+    } else {
+      const errorData = await response.json().catch(() => ({}));
+      error.value = "获取申请数据失败: " + (errorData.message || "请稍后重试");
+    }
   } catch (err) {
     console.error("获取申请数据失败:", err);
     error.value = "网络错误，请稍后重试";
@@ -314,7 +320,10 @@ const filteredApplications = computed(() => {
     // 关键词搜索
     if (searchKeyword.value) {
       const keyword = searchKeyword.value.toLowerCase();
-      if (!app.applicantName.toLowerCase().includes(keyword) && !app.jobTitle.toLowerCase().includes(keyword)) {
+      if (
+        !app.applicantName.toLowerCase().includes(keyword) &&
+        !app.jobTitle.toLowerCase().includes(keyword)
+      ) {
         return false;
       }
     }
@@ -339,7 +348,10 @@ const totalApplications = computed(() => {
     // 关键词搜索
     if (searchKeyword.value) {
       const keyword = searchKeyword.value.toLowerCase();
-      if (!app.applicantName.toLowerCase().includes(keyword) && !app.jobTitle.toLowerCase().includes(keyword)) {
+      if (
+        !app.applicantName.toLowerCase().includes(keyword) &&
+        !app.jobTitle.toLowerCase().includes(keyword)
+      ) {
         return false;
       }
     }
@@ -388,36 +400,36 @@ const handleCurrentChange = (page) => {
 // 获取状态标签类型
 const getStatusTagType = (status) => {
   switch (status) {
-    case 'pending':
-      return 'warning';
-    case 'approved':
-      return 'success';
-    case 'rejected':
-      return 'danger';
+    case "pending":
+      return "warning";
+    case "approved":
+      return "success";
+    case "rejected":
+      return "danger";
     default:
-      return 'info';
+      return "info";
   }
 };
 
 // 获取状态文本
 const getStatusText = (status) => {
   switch (status) {
-    case 'pending':
-      return '待处理';
-    case 'approved':
-      return '已通过';
-    case 'rejected':
-      return '已拒绝';
+    case "pending":
+      return "待处理";
+    case "approved":
+      return "已通过";
+    case "rejected":
+      return "已拒绝";
     default:
-      return '未知状态';
+      return "未知状态";
   }
 };
 
 // 下载简历
 const downloadResume = (resumeUrl) => {
   // 实际应该跳转到简历下载链接
-  console.log('下载简历:', resumeUrl);
-  alert('简历下载功能待实现');
+  console.log("下载简历:", resumeUrl);
+  alert("简历下载功能待实现");
 };
 
 // 查看申请详情
@@ -433,37 +445,69 @@ const closeDetailModal = () => {
 };
 
 // 批准申请
-const approveApplication = (applicationId) => {
-  if (confirm('确定要批准这个申请吗？')) {
-    // 实际应该调用后端API
-    console.log('批准申请:', applicationId);
-    // 更新本地数据
-    const application = applications.value.find(app => app.id === applicationId);
-    if (application) {
-      application.status = 'approved';
+const approveApplication = async (applicationId) => {
+  if (confirm("确定要批准这个申请吗？")) {
+    try {
+      const response = await fetch(
+        `/employment/api/company/applications/${applicationId}/approve`,
+        {
+          method: "PUT",
+          credentials: "include",
+        },
+      );
+      if (response.ok) {
+        // 更新本地数据
+        const application = applications.value.find(
+          (app) => app.id === applicationId,
+        );
+        if (application) {
+          application.status = "approved";
+        }
+        alert("申请已批准");
+      } else {
+        alert("批准申请失败，请稍后重试");
+      }
+    } catch (err) {
+      console.error("批准申请失败:", err);
+      alert("网络错误，请稍后重试");
     }
-    alert('申请已批准');
   }
 };
 
 // 拒绝申请
-const rejectApplication = (applicationId) => {
-  if (confirm('确定要拒绝这个申请吗？')) {
-    // 实际应该调用后端API
-    console.log('拒绝申请:', applicationId);
-    // 更新本地数据
-    const application = applications.value.find(app => app.id === applicationId);
-    if (application) {
-      application.status = 'rejected';
+const rejectApplication = async (applicationId) => {
+  if (confirm("确定要拒绝这个申请吗？")) {
+    try {
+      const response = await fetch(
+        `/employment/api/company/applications/${applicationId}/reject`,
+        {
+          method: "PUT",
+          credentials: "include",
+        },
+      );
+      if (response.ok) {
+        // 更新本地数据
+        const application = applications.value.find(
+          (app) => app.id === applicationId,
+        );
+        if (application) {
+          application.status = "rejected";
+        }
+        alert("申请已拒绝");
+      } else {
+        alert("拒绝申请失败，请稍后重试");
+      }
+    } catch (err) {
+      console.error("拒绝申请失败:", err);
+      alert("网络错误，请稍后重试");
     }
-    alert('申请已拒绝');
   }
 };
 
 onMounted(() => {
   // 页面加载时获取申请数据
   fetchApplications();
-  console.log('Company Applications mounted');
+  console.log("Company Applications mounted");
 });
 </script>
 

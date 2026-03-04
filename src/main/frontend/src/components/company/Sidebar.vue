@@ -28,6 +28,12 @@
         </template>
         <span>用户管理</span>
       </el-menu-item>
+      <el-menu-item index="/admin/companies">
+        <template #icon>
+          <el-icon><i-ep-office-building /></el-icon>
+        </template>
+        <span>企业管理</span>
+      </el-menu-item>
       <el-menu-item index="/admin/statistics">
         <template #icon>
           <el-icon><i-ep-data-analysis /></el-icon>

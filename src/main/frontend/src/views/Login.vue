@@ -134,9 +134,15 @@ const login = async () => {
             localStorage.setItem("isStudent", isStudent.toString());
             localStorage.setItem("isCompany", isCompany.toString());
 
+            // 如果是公司用户，存储公司ID
+            if (isCompany && user.companyId) {
+              localStorage.setItem("companyId", user.companyId.toString());
+            }
+
             console.log("登录成功，localStorage存储:", {
               username: localStorage.getItem("username"),
               userId: localStorage.getItem("userId"),
+              companyId: localStorage.getItem("companyId"),
               isAdmin: localStorage.getItem("isAdmin"),
               isStudent: localStorage.getItem("isStudent"),
               isCompany: localStorage.getItem("isCompany"),

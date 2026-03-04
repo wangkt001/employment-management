@@ -139,6 +139,8 @@ const formData = ref({
   description: "",
   requirements: "",
   tagsInput: "",
+  companyId: localStorage.getItem("companyId") ? parseInt(localStorage.getItem("companyId")) : 4, // 从本地缓存获取公司ID，默认4
+  userId: localStorage.getItem("userId") ? parseInt(localStorage.getItem("userId")) : 2, // 从本地缓存获取用户ID，默认2
 });
 
 const localVisible = ref(props.visible);
@@ -170,6 +172,8 @@ watch(
         description: newJobData.description || "",
         requirements: newJobData.requirements || "",
         tagsInput: newJobData.tags ? newJobData.tags.join(", ") : "",
+        companyId: newJobData.companyId || (localStorage.getItem("companyId") ? parseInt(localStorage.getItem("companyId")) : 4), // 从本地缓存获取公司ID，默认4
+        userId: localStorage.getItem("userId") ? parseInt(localStorage.getItem("userId")) : 2, // 从本地缓存获取用户ID，默认2
       };
     }
   },

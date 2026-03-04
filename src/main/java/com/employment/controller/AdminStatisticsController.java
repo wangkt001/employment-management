@@ -59,7 +59,7 @@ public class AdminStatisticsController {
         return "admin/statistics";
     }
     
-    @GetMapping("/admin/users")
+    @GetMapping("/admin/user-list")
     public String users(Model model) {
         // 获取所有用户
         model.addAttribute("users", userRepository.findAll());

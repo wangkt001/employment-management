@@ -59,15 +59,27 @@ const props = defineProps({
 const emit = defineEmits(["retry", "add-job"]);
 
 const isEmptyTitle = computed(() => {
-  return props.type === "applications" ? "暂无申请" : "暂无岗位数据";
+  if (props.type === "applications") {
+    return "暂无申请";
+  } else if (props.type === "companies") {
+    return "暂无企业信息";
+  } else {
+    return "暂无岗位数据";
+  }
 });
 
 const isEmptySubtitle = computed(() => {
-  return props.type === "applications" ? "还没有申请任何岗位，快去浏览并申请心仪的岗位吧！" : "还没有发布任何岗位，快来发布第一个岗位吧！";
+  if (props.type === "applications") {
+    return "还没有申请任何岗位，快去浏览并申请心仪的岗位吧！";
+  } else if (props.type === "companies") {
+    return "还没有添加任何企业，快来添加第一个企业吧！";
+  } else {
+    return "还没有发布任何岗位，快来发布第一个岗位吧！";
+  }
 });
 
 const showAddButton = computed(() => {
-  return props.type !== "applications";
+  return false;
 });
 </script>
 

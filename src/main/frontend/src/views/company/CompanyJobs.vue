@@ -237,19 +237,51 @@ const fetchJobs = async () => {
   isLoading.value = true;
   error.value = "";
   try {
-    const response = await fetch("/api/company/jobs", {
+    // 从本地缓存获取companyId，并确保是数字类型
+    const companyId = parseInt(localStorage.getItem("companyId")) || 4;
+    
+    // 构建查询参数
+    let params = new URLSearchParams();
+    params.append("companyId", companyId);
+    
+    // 添加搜索关键词
+    if (searchKeyword.value) {
+      params.append("title", searchKeyword.value);
+    }
+    
+    // 添加地区筛选
+    if (locationFilter.value !== "all") {
+      params.append("location", locationFilter.value);
+    }
+    
+    // 添加状态筛选
+    if (activeTab.value === "active") {
+      params.append("active", "true");
+    } else if (activeTab.value === "inactive") {
+      params.append("active", "false");
+    }
+    
+    // 添加分页参数
+    params.append("page", currentPage.value - 1); // 后端从0开始
+    params.append("size", pageSize.value);
+    
+    const response = await fetch(`/employment/api/company/jobs/page?${params.toString()}`, {
       credentials: "include",
     });
+    
     if (response.ok) {
       const data = await response.json();
+      console.log("分页查询结果:", data);
+      
       // 转换后端数据格式以匹配前端需求
-      jobs.value = data.map((job) => ({
+      jobs.value = data.content.map((job) => ({
         id: job.id,
         title: job.title,
         salary: job.salaryRange,
         location: job.workingLocation,
         experience: job.workExperience,
         education: job.educationLevel,
+        industry: job.industry,
         description: job.responsibilities,
         requirements: job.requirements,
         tags: job.tags ? job.tags.split(",") : [], // 从后端获取标签
@@ -260,6 +292,9 @@ const fetchJobs = async () => {
           : new Date().toISOString().split("T")[0],
         status: job.active ? "active" : "inactive",
       }));
+      
+      // 更新总岗位数
+      totalJobs.value = data.totalElements;
     } else {
       error.value = "获取岗位数据失败";
     }
@@ -271,60 +306,13 @@ const fetchJobs = async () => {
   }
 };
 
-// 筛选后的岗位
+// 筛选后的岗位（直接使用后端返回的数据，因为后端已经进行了筛选和分页）
 const filteredJobs = computed(() => {
-  let result = jobs.value.filter((job) => {
-    // 状态筛选
-    if (activeTab.value === "active") {
-      if (job.status !== "active") return false;
-    } else if (activeTab.value === "inactive") {
-      if (job.status !== "inactive") return false;
-    }
-
-    // 关键词搜索
-    if (searchKeyword.value) {
-      if (!job.title.toLowerCase().includes(searchKeyword.value.toLowerCase()))
-        return false;
-    }
-
-    // 地区筛选
-    if (locationFilter.value !== "all") {
-      if (!job.location.includes(locationFilter.value)) return false;
-    }
-
-    return true;
-  });
-
-  // 分页
-  const startIndex = (currentPage.value - 1) * pageSize.value;
-  const endIndex = startIndex + pageSize.value;
-  return result.slice(startIndex, endIndex);
+  return jobs.value;
 });
 
-// 总岗位数
-const totalJobs = computed(() => {
-  return jobs.value.filter((job) => {
-    // 状态筛选
-    if (activeTab.value === "active") {
-      if (job.status !== "active") return false;
-    } else if (activeTab.value === "inactive") {
-      if (job.status !== "inactive") return false;
-    }
-
-    // 关键词搜索
-    if (searchKeyword.value) {
-      if (!job.title.toLowerCase().includes(searchKeyword.value.toLowerCase()))
-        return false;
-    }
-
-    // 地区筛选
-    if (locationFilter.value !== "all") {
-      if (!job.location.includes(locationFilter.value)) return false;
-    }
-
-    return true;
-  }).length;
-});
+// 总岗位数（从后端返回的数据中获取）
+const totalJobs = ref(0);
 
 // 切换侧边栏
 const toggleSidebar = () => {
@@ -348,7 +336,11 @@ const editJob = (job) => {
 const deleteJob = async (jobId) => {
   if (confirm("确定要删除这个岗位吗？")) {
     try {
-      const response = await fetch(`/api/company/jobs/${jobId}`, {
+      // 从本地缓存获取userId和companyId
+      const userId = parseInt(localStorage.getItem("userId")) || 2;
+      const companyId = parseInt(localStorage.getItem("companyId")) || 4;
+      
+      const response = await fetch(`/employment/api/company/jobs/${jobId}?userId=${userId}&companyId=${companyId}`, {
         method: "DELETE",
         credentials: "include",
       });
@@ -369,8 +361,12 @@ const deleteJob = async (jobId) => {
 // 切换岗位状态
 const toggleJobStatus = async (jobId, newStatus) => {
   try {
+    // 从本地缓存获取userId和companyId
+    const userId = parseInt(localStorage.getItem("userId")) || 2;
+    const companyId = parseInt(localStorage.getItem("companyId")) || 4;
+    
     const response = await fetch(
-      `/api/company/jobs/${jobId}/status?active=${newStatus === "active"}`,
+      `/employment/api/company/jobs/${jobId}/status?active=${newStatus === "active"}&userId=${userId}&companyId=${companyId}`,
       {
         method: "PATCH",
         credentials: "include",
@@ -412,12 +408,14 @@ const submitJob = async (formData) => {
       description: formData.description,
       requirements: formData.requirements,
       tagsInput: formData.tagsInput,
+      companyId: formData.companyId,
+      userId: formData.userId,
     };
 
     let response;
     if (showEditJobModal.value) {
       // 编辑现有岗位
-      response = await fetch(`/api/company/jobs/${editingJobId.value}`, {
+      response = await fetch(`/employment/api/company/jobs/${editingJobId.value}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -427,7 +425,7 @@ const submitJob = async (formData) => {
       });
     } else {
       // 创建新岗位
-      response = await fetch("/api/company/jobs", {
+      response = await fetch("/employment/api/company/jobs", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -454,27 +452,32 @@ const submitJob = async (formData) => {
 // 搜索处理
 const handleSearch = () => {
   currentPage.value = 1; // 重置到第一页
+  fetchJobs(); // 重新获取数据
 };
 
 // 状态筛选处理
 const handleStatusFilter = () => {
   currentPage.value = 1; // 重置到第一页
+  fetchJobs(); // 重新获取数据
 };
 
 // 分页大小变化处理
 const handleSizeChange = (size) => {
   pageSize.value = size;
   currentPage.value = 1; // 重置到第一页
+  fetchJobs(); // 重新获取数据
 };
 
 // 当前页码变化处理
 const handleCurrentChange = (page) => {
   currentPage.value = page;
+  fetchJobs(); // 重新获取数据
 };
 
 // 地区筛选处理
 const handleLocationFilter = () => {
   currentPage.value = 1; // 重置到第一页
+  fetchJobs(); // 重新获取数据
 };
 
 onMounted(() => {

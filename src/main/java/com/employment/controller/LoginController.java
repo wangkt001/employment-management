@@ -1,6 +1,8 @@
 package com.employment.controller;
 
+import com.employment.entity.Company;
 import com.employment.entity.User;
+import com.employment.repository.CompanyRepository;
 import com.employment.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -15,6 +17,9 @@ public class LoginController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private CompanyRepository companyRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -75,6 +80,19 @@ public class LoginController {
         userInfo.put("phone", user.getPhone());
         userInfo.put("address", user.getAddress());
         userInfo.put("isActive", user.isActive());
+        
+        // 如果是公司用户，添加公司ID
+        if ("COMPANY".equals(user.getRole())) {
+            // 从 Company 表中获取与用户关联的公司
+            try {
+                Company company = companyRepository.findByUserId(user.getId());
+                if (company != null) {
+                    userInfo.put("companyId", company.getId());
+                }
+            } catch (Exception e) {
+                System.out.println("获取公司信息失败: " + e.getMessage());
+            }
+        }
         
         response.put("user", userInfo);
         

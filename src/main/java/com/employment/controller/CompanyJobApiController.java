@@ -10,6 +10,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import java.util.Date;
 import java.util.List;
@@ -32,156 +37,155 @@ public class CompanyJobApiController {
 
     // 获取企业的所有岗位
     @GetMapping
-    public List<Job> getJobs(Authentication authentication) {
+    public List<Job> getJobs() {
         try {
-            if (authentication == null || authentication.getName() == null) {
-                System.out.println("未找到认证用户");
-                return List.of();
-            }
-            User user = userRepository.findByUsername(authentication.getName());
-            if (user == null) {
-                System.out.println("用户不存在");
-                return List.of();
-            }
-            Company company = companyRepository.findByUserId(user.getId());
-            if (company == null) {
-                System.out.println("公司不存在");
-                return List.of();
-            }
-            return jobRepository.findByCompanyId(company.getId());
+            System.out.println("获取所有岗位");
+            return jobRepository.findAll();
         } catch (Exception e) {
             e.printStackTrace();
             return List.of();
         }
     }
 
+    // 分页查询岗位
+    @RequestMapping(value = "/page", method = RequestMethod.GET)
+    public Page<Job> getJobsByPage(
+            @RequestParam("companyId") Long companyId,
+            @RequestParam(value = "title", required = false) String title,
+            @RequestParam(value = "location", required = false) String location,
+            @RequestParam(value = "active", required = false) Boolean active,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size) {
+        try {
+            System.out.println("分页查询岗位");
+            System.out.println("companyId: " + companyId);
+            System.out.println("title: " + title);
+            System.out.println("location: " + location);
+            System.out.println("active: " + active);
+            System.out.println("page: " + page);
+            System.out.println("size: " + size);
+
+            // 构建排序
+            Sort sort = Sort.by(Sort.Direction.DESC, "publishDate");
+            // 构建分页请求
+            Pageable pageable = PageRequest.of(page, size, sort);
+
+            // 根据条件查询
+            Page<Job> jobPage;
+            if (title != null && location != null && active != null) {
+                jobPage = jobRepository.findByCompanyIdAndTitleContainingAndWorkingLocationContainingAndActive(
+                        companyId, title, location, active, pageable);
+            } else if (title != null && location != null) {
+                jobPage = jobRepository.findByCompanyIdAndTitleContainingAndWorkingLocationContaining(
+                        companyId, title, location, pageable);
+            } else if (title != null && active != null) {
+                jobPage = jobRepository.findByCompanyIdAndTitleContainingAndActive(
+                        companyId, title, active, pageable);
+            } else if (location != null && active != null) {
+                jobPage = jobRepository.findByCompanyIdAndWorkingLocationContainingAndActive(
+                        companyId, location, active, pageable);
+            } else if (title != null) {
+                jobPage = jobRepository.findByCompanyIdAndTitleContaining(
+                        companyId, title, pageable);
+            } else if (location != null) {
+                jobPage = jobRepository.findByCompanyIdAndWorkingLocationContaining(
+                        companyId, location, pageable);
+            } else if (active != null) {
+                jobPage = jobRepository.findByCompanyIdAndActive(
+                        companyId, active, pageable);
+            } else {
+                jobPage = jobRepository.findByCompanyId(
+                        companyId, pageable);
+            }
+
+            System.out.println("查询结果: " + jobPage.getTotalElements() + " 条记录");
+            return jobPage;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Page.empty();
+        }
+    }
+
     // 创建新岗位
     @PostMapping
-    public Job createJob(@RequestBody JobRequest jobRequest, Authentication authentication) {
+    public Job createJob(@RequestBody JobRequest jobRequest) {
         System.out.println("开始创建岗位...");
         System.out.println("请求参数: " + jobRequest.toString());
         try {
-            // 1. 获取或创建用户
-            System.out.println("步骤1: 获取或创建用户");
-            try {
-                User user = null;
-                if (authentication != null && authentication.getName() != null) {
-                    System.out.println("使用认证用户: " + authentication.getName());
-                    user = userRepository.findByUsername(authentication.getName());
-                    if (user == null) {
-                        System.out.println("用户不存在，创建新用户");
-                        user = new User();
-                        user.setUsername(authentication.getName());
-                        user.setPassword(passwordEncoder.encode("default123"));
-                        user.setRole("COMPANY");
-                        user.setName(authentication.getName());
-                        user.setActive(true);
-                        user = userRepository.save(user);
-                        System.out.println("创建用户成功，ID: " + user.getId());
-                    } else {
-                        System.out.println("用户已存在，ID: " + user.getId());
-                    }
-                } else {
-                    System.out.println("未找到认证用户");
-                    throw new RuntimeException("用户未认证，请先登录");
-                }
-
-                // 2. 获取或创建公司
-                System.out.println("步骤2: 获取或创建公司");
-                Company company = companyRepository.findByUserId(user.getId());
-                if (company == null) {
-                    System.out.println("公司不存在，创建新公司");
-                    company = new Company();
-                    company.setUser(user);
-                    company.setCompanyName("测试公司");
-                    company.setVerified(true);
-                    System.out.println("准备保存公司");
-                    company = companyRepository.save(company);
-                    System.out.println("创建公司成功，ID: " + company.getId());
-                } else {
-                    System.out.println("公司已存在，ID: " + company.getId());
-                }
-
-                // 3. 创建岗位
-                System.out.println("步骤3: 创建岗位");
-                Job job = new Job();
-                job.setCompany(company);
-                job.setTitle(jobRequest.getTitle());
-                job.setPosition(jobRequest.getTitle()); // 使用title作为position
-                job.setSalaryRange(jobRequest.getSalary());
-                job.setWorkingLocation(jobRequest.getLocation());
-                job.setWorkExperience(jobRequest.getExperience());
-                job.setEducationLevel(jobRequest.getEducation());
-                job.setIndustry(jobRequest.getIndustry());
-                job.setResponsibilities(jobRequest.getDescription());
-                job.setRequirements(jobRequest.getRequirements());
-                job.setTags(jobRequest.getTagsInput());
-                job.setActive(true);
-                job.setPublishDate(new Date());
-
-                System.out.println("准备保存岗位");
-                Job savedJob = jobRepository.save(job);
-                System.out.println("岗位创建成功，ID: " + savedJob.getId());
-                return savedJob;
-            } catch (Exception e) {
-                System.out.println("数据库操作错误: " + e.getMessage());
-                e.printStackTrace();
-                // 返回友好的错误信息，而不是抛出异常
-                throw new RuntimeException("数据库操作失败: " + e.getMessage());
+            // 1. 根据userId获取用户
+            System.out.println("步骤1: 根据userId获取用户");
+            if (jobRequest.getUserId() == null) {
+                System.out.println("userId为null");
+                throw new RuntimeException("用户ID不能为空");
             }
+            User user = userRepository.findById(jobRequest.getUserId())
+                    .orElseThrow(() -> new RuntimeException("用户不存在"));
+            System.out.println("找到用户，ID: " + user.getId() + "，名称: " + user.getName());
+
+            // 2. 根据companyId获取公司
+            System.out.println("步骤2: 根据companyId获取公司");
+            if (jobRequest.getCompanyId() == null) {
+                System.out.println("companyId为null");
+                throw new RuntimeException("公司ID不能为空");
+            }
+            Company company = companyRepository.findById(jobRequest.getCompanyId())
+                    .orElseThrow(() -> new RuntimeException("企业不存在"));
+            System.out.println("找到公司，ID: " + company.getId() + "，名称: " + company.getCompanyName());
+
+            // 3. 创建岗位
+            System.out.println("步骤3: 创建岗位");
+            Job job = new Job();
+            job.setCompany(company);
+            job.setTitle(jobRequest.getTitle());
+            job.setPosition(jobRequest.getTitle()); // 使用title作为position
+            job.setSalaryRange(jobRequest.getSalary());
+            job.setWorkingLocation(jobRequest.getLocation());
+            job.setWorkExperience(jobRequest.getExperience());
+            job.setEducationLevel(jobRequest.getEducation());
+            job.setIndustry(jobRequest.getIndustry());
+            job.setResponsibilities(jobRequest.getDescription());
+            job.setRequirements(jobRequest.getRequirements());
+            job.setTags(jobRequest.getTagsInput());
+            job.setActive(true);
+            job.setPublishDate(new Date());
+
+            System.out.println("准备保存岗位");
+            Job savedJob = jobRepository.save(job);
+            System.out.println("岗位创建成功，ID: " + savedJob.getId());
+            return savedJob;
         } catch (Exception e) {
             System.out.println("错误信息: " + e.getMessage());
             e.printStackTrace();
-            // 返回友好的错误信息，而不是抛出异常
-            throw new RuntimeException("岗位创建失败: " + e.getMessage());
+            throw e;
         }
     }
 
     // 更新岗位
     @PutMapping("/{id}")
-    public Job updateJob(@PathVariable Long id, @RequestBody JobRequest jobRequest, Authentication authentication) {
+    public Job updateJob(@PathVariable Long id, @RequestBody JobRequest jobRequest) {
         System.out.println("开始更新岗位...");
         System.out.println("岗位ID: " + id);
         System.out.println("请求参数: " + jobRequest.toString());
         try {
-            // 1. 获取认证用户
-            System.out.println("步骤1: 获取认证用户");
-            User user = null;
-            if (authentication != null && authentication.getName() != null) {
-                System.out.println("使用认证用户: " + authentication.getName());
-                user = userRepository.findByUsername(authentication.getName());
-                if (user == null) {
-                    System.out.println("用户不存在，创建新用户");
-                    user = new User();
-                    user.setUsername(authentication.getName());
-                    user.setPassword(passwordEncoder.encode("default123"));
-                    user.setRole("COMPANY");
-                    user.setName(authentication.getName());
-                    user.setActive(true);
-                    user = userRepository.save(user);
-                    System.out.println("创建用户成功，ID: " + user.getId());
-                } else {
-                    System.out.println("用户已存在，ID: " + user.getId());
-                }
-            } else {
-                System.out.println("未找到认证用户");
-                throw new RuntimeException("用户未认证，请先登录");
+            // 1. 根据userId获取用户
+            System.out.println("步骤1: 根据userId获取用户");
+            if (jobRequest.getUserId() == null) {
+                System.out.println("userId为null");
+                throw new RuntimeException("用户ID不能为空");
             }
+            User user = userRepository.findById(jobRequest.getUserId())
+                    .orElseThrow(() -> new RuntimeException("用户不存在"));
+            System.out.println("找到用户，ID: " + user.getId() + "，名称: " + user.getName());
 
-            // 2. 获取或创建公司
-            System.out.println("步骤2: 获取或创建公司");
-            Company company = companyRepository.findByUserId(user.getId());
-            if (company == null) {
-                System.out.println("公司不存在，创建新公司");
-                company = new Company();
-                company.setUser(user);
-                company.setCompanyName(user.getName() + "公司");
-                company.setVerified(true);
-                company = companyRepository.save(company);
-                System.out.println("创建公司成功，ID: " + company.getId());
-            } else {
-                System.out.println("公司已存在，ID: " + company.getId());
+            // 2. 根据companyId获取公司
+            System.out.println("步骤2: 根据companyId获取公司");
+            if (jobRequest.getCompanyId() == null) {
+                System.out.println("companyId为null");
+                throw new RuntimeException("公司ID不能为空");
             }
+            Company company = companyRepository.findById(jobRequest.getCompanyId())
+                    .orElseThrow(() -> new RuntimeException("企业不存在"));
+            System.out.println("找到公司，ID: " + company.getId() + "，名称: " + company.getCompanyName());
 
             // 3. 查找岗位
             System.out.println("步骤3: 查找岗位");
@@ -222,48 +226,31 @@ public class CompanyJobApiController {
 
     // 删除岗位
     @DeleteMapping("/{id}")
-    public String deleteJob(@PathVariable Long id, Authentication authentication) {
+    public String deleteJob(@PathVariable Long id, @RequestParam Long userId, @RequestParam Long companyId) {
         System.out.println("开始删除岗位...");
         System.out.println("岗位ID: " + id);
+        System.out.println("userId: " + userId);
+        System.out.println("companyId: " + companyId);
         try {
-            // 1. 获取认证用户
-            System.out.println("步骤1: 获取认证用户");
-            User user = null;
-            if (authentication != null && authentication.getName() != null) {
-                System.out.println("使用认证用户: " + authentication.getName());
-                user = userRepository.findByUsername(authentication.getName());
-                if (user == null) {
-                    System.out.println("用户不存在，创建新用户");
-                    user = new User();
-                    user.setUsername(authentication.getName());
-                    user.setPassword(passwordEncoder.encode("default123"));
-                    user.setRole("COMPANY");
-                    user.setName(authentication.getName());
-                    user.setActive(true);
-                    user = userRepository.save(user);
-                    System.out.println("创建用户成功，ID: " + user.getId());
-                } else {
-                    System.out.println("用户已存在，ID: " + user.getId());
-                }
-            } else {
-                System.out.println("未找到认证用户");
-                throw new RuntimeException("用户未认证，请先登录");
+            // 1. 根据userId获取用户
+            System.out.println("步骤1: 根据userId获取用户");
+            if (userId == null) {
+                System.out.println("userId为null");
+                throw new RuntimeException("用户ID不能为空");
             }
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("用户不存在"));
+            System.out.println("找到用户，ID: " + user.getId() + "，名称: " + user.getName());
 
-            // 2. 获取或创建公司
-            System.out.println("步骤2: 获取或创建公司");
-            Company company = companyRepository.findByUserId(user.getId());
-            if (company == null) {
-                System.out.println("公司不存在，创建新公司");
-                company = new Company();
-                company.setUser(user);
-                company.setCompanyName(user.getName() + "公司");
-                company.setVerified(true);
-                company = companyRepository.save(company);
-                System.out.println("创建公司成功，ID: " + company.getId());
-            } else {
-                System.out.println("公司已存在，ID: " + company.getId());
+            // 2. 根据companyId获取公司
+            System.out.println("步骤2: 根据companyId获取公司");
+            if (companyId == null) {
+                System.out.println("companyId为null");
+                throw new RuntimeException("公司ID不能为空");
             }
+            Company company = companyRepository.findById(companyId)
+                    .orElseThrow(() -> new RuntimeException("企业不存在"));
+            System.out.println("找到公司，ID: " + company.getId() + "，名称: " + company.getCompanyName());
 
             // 3. 查找岗位
             System.out.println("步骤3: 查找岗位");
@@ -291,33 +278,33 @@ public class CompanyJobApiController {
 
     // 切换岗位状态
     @PatchMapping("/{id}/status")
-    public Job toggleJobStatus(@PathVariable Long id, @RequestParam boolean active, Authentication authentication) {
+    public Job toggleJobStatus(@PathVariable Long id, @RequestParam boolean active, @RequestParam Long userId,
+            @RequestParam Long companyId) {
         System.out.println("开始切换岗位状态...");
         System.out.println("岗位ID: " + id);
         System.out.println("新状态: " + active);
+        System.out.println("userId: " + userId);
+        System.out.println("companyId: " + companyId);
         try {
-            // 1. 获取认证用户
-            System.out.println("步骤1: 获取认证用户");
-            User user = null;
-            if (authentication != null && authentication.getName() != null) {
-                System.out.println("使用认证用户: " + authentication.getName());
-                user = userRepository.findByUsername(authentication.getName());
-                if (user == null) {
-                    System.out.println("用户不存在");
-                    throw new RuntimeException("用户不存在");
-                }
-            } else {
-                System.out.println("未找到认证用户");
-                throw new RuntimeException("用户未认证，请先登录");
+            // 1. 根据userId获取用户
+            System.out.println("步骤1: 根据userId获取用户");
+            if (userId == null) {
+                System.out.println("userId为null");
+                throw new RuntimeException("用户ID不能为空");
             }
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("用户不存在"));
+            System.out.println("找到用户，ID: " + user.getId() + "，名称: " + user.getName());
 
-            // 2. 获取公司
-            System.out.println("步骤2: 获取公司");
-            Company company = companyRepository.findByUserId(user.getId());
-            if (company == null) {
-                System.out.println("公司不存在");
-                throw new RuntimeException("公司不存在");
+            // 2. 根据companyId获取公司
+            System.out.println("步骤2: 根据companyId获取公司");
+            if (companyId == null) {
+                System.out.println("companyId为null");
+                throw new RuntimeException("公司ID不能为空");
             }
+            Company company = companyRepository.findById(companyId)
+                    .orElseThrow(() -> new RuntimeException("企业不存在"));
+            System.out.println("找到公司，ID: " + company.getId() + "，名称: " + company.getCompanyName());
 
             // 3. 查找岗位
             System.out.println("步骤3: 查找岗位");
@@ -366,6 +353,8 @@ public class CompanyJobApiController {
         private String description;
         private String requirements;
         private String tagsInput;
+        private Long companyId;
+        private Long userId;
 
         // getters and setters
         public String getTitle() {
@@ -440,6 +429,22 @@ public class CompanyJobApiController {
             this.tagsInput = tagsInput;
         }
 
+        public Long getCompanyId() {
+            return companyId;
+        }
+
+        public void setCompanyId(Long companyId) {
+            this.companyId = companyId;
+        }
+
+        public Long getUserId() {
+            return userId;
+        }
+
+        public void setUserId(Long userId) {
+            this.userId = userId;
+        }
+
         @Override
         public String toString() {
             return "JobRequest{" +
@@ -452,6 +457,8 @@ public class CompanyJobApiController {
                     ", description='" + description + '\'' +
                     ", requirements='" + requirements + '\'' +
                     ", tagsInput='" + tagsInput + '\'' +
+                    ", companyId='" + companyId + '\'' +
+                    ", userId='" + userId + '\'' +
                     '}';
         }
     }

@@ -39,7 +39,15 @@ public class Job {
     private Date expireDate;
     
     @Column(name = "is_active", nullable = false, columnDefinition = "boolean default true")
-    private boolean isActive = true;
+    private boolean active = true;
+    
+    public boolean isActive() {
+        return active;
+    }
+    
+    public void setActive(boolean active) {
+        this.active = active;
+    }
     
     private String tags;
 }

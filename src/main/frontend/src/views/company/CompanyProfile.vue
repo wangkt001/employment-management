@@ -13,6 +13,7 @@
       <TopNav
         title="企业资料"
         :username="username"
+        :role="role"
         @toggle-sidebar="toggleSidebar"
       />
 
@@ -27,7 +28,7 @@
               @click="isEditing = !isEditing"
               class="edit-btn"
             >
-              {{ isEditing ? '取消' : '编辑资料' }}
+              {{ isEditing ? "取消" : "编辑资料" }}
             </el-button>
           </div>
 
@@ -41,12 +42,18 @@
             <el-row :gutter="20">
               <el-col :span="12">
                 <el-form-item label="企业名称" required>
-                  <el-input v-model="companyForm.companyName" placeholder="请输入企业名称" />
+                  <el-input
+                    v-model="companyForm.companyName"
+                    placeholder="请输入企业名称"
+                  />
                 </el-form-item>
               </el-col>
               <el-col :span="12">
                 <el-form-item label="所属行业" required>
-                  <el-select v-model="companyForm.industry" placeholder="请选择所属行业">
+                  <el-select
+                    v-model="companyForm.industry"
+                    placeholder="请选择所属行业"
+                  >
                     <el-option label="互联网" value="互联网" />
                     <el-option label="金融" value="金融" />
                     <el-option label="教育" value="教育" />
@@ -61,7 +68,10 @@
             <el-row :gutter="20">
               <el-col :span="12">
                 <el-form-item label="企业规模" required>
-                  <el-select v-model="companyForm.scale" placeholder="请选择企业规模">
+                  <el-select
+                    v-model="companyForm.scale"
+                    placeholder="请选择企业规模"
+                  >
                     <el-option label="1-50人" value="1-50人" />
                     <el-option label="51-200人" value="51-200人" />
                     <el-option label="201-500人" value="201-500人" />
@@ -72,7 +82,10 @@
               </el-col>
               <el-col :span="12">
                 <el-form-item label="企业性质" required>
-                  <el-select v-model="companyForm.nature" placeholder="请选择企业性质">
+                  <el-select
+                    v-model="companyForm.nature"
+                    placeholder="请选择企业性质"
+                  >
                     <el-option label="国有企业" value="国有企业" />
                     <el-option label="民营企业" value="民营企业" />
                     <el-option label="外资企业" value="外资企业" />
@@ -95,26 +108,41 @@
             <el-row :gutter="20">
               <el-col :span="12">
                 <el-form-item label="联系人" required>
-                  <el-input v-model="companyForm.contactPerson" placeholder="请输入联系人姓名" />
+                  <el-input
+                    v-model="companyForm.contactPerson"
+                    placeholder="请输入联系人姓名"
+                  />
                 </el-form-item>
               </el-col>
               <el-col :span="12">
                 <el-form-item label="联系电话" required>
-                  <el-input v-model="companyForm.contactPhone" placeholder="请输入联系电话" />
+                  <el-input
+                    v-model="companyForm.contactPhone"
+                    placeholder="请输入联系电话"
+                  />
                 </el-form-item>
               </el-col>
             </el-row>
 
             <el-form-item label="联系邮箱">
-              <el-input v-model="companyForm.contactEmail" placeholder="请输入联系邮箱" />
+              <el-input
+                v-model="companyForm.contactEmail"
+                placeholder="请输入联系邮箱"
+              />
             </el-form-item>
 
             <el-form-item label="企业地址">
-              <el-input v-model="companyForm.address" placeholder="请输入企业地址" />
+              <el-input
+                v-model="companyForm.address"
+                placeholder="请输入企业地址"
+              />
             </el-form-item>
 
             <el-form-item label="企业网站">
-              <el-input v-model="companyForm.website" placeholder="请输入企业网站" />
+              <el-input
+                v-model="companyForm.website"
+                placeholder="请输入企业网站"
+              />
             </el-form-item>
 
             <el-form-item label="营业执照">
@@ -155,7 +183,7 @@
           <h3>认证状态</h3>
           <div class="verification-status">
             <el-tag :type="companyForm.verified ? 'success' : 'warning'">
-              {{ companyForm.verified ? '已认证' : '待认证' }}
+              {{ companyForm.verified ? "已认证" : "待认证" }}
             </el-tag>
             <p v-if="!companyForm.verified" class="verification-tip">
               提交营业执照后，我们将在 1-3 个工作日内完成审核
@@ -178,31 +206,20 @@ const sidebarCollapsed = ref(false);
 
 // 从本地存储获取用户信息
 const username = ref(localStorage.getItem("username") || "企业");
+const role = ref(localStorage.getItem("role") || "COMPANY");
 
 // 编辑状态
 const isEditing = ref(false);
 
 // 企业表单数据
-const companyForm = ref({
-  companyName: "测试公司",
-  industry: "互联网",
-  scale: "51-200人",
-  nature: "民营企业",
-  description: "这是一家专注于互联网技术的创新企业，成立于2020年，致力于为客户提供高质量的技术解决方案。",
-  contactPerson: "张三",
-  contactPhone: "13800138000",
-  contactEmail: "contact@example.com",
-  address: "北京市朝阳区科技园",
-  website: "https://www.example.com",
-  verified: true
-});
+const companyForm = ref();
 
 // 文件上传相关
 const fileList = ref([
   {
     name: "营业执照.jpg",
-    url: "#"
-  }
+    url: "#",
+  },
 ]);
 
 // 切换侧边栏
@@ -219,20 +236,20 @@ const logout = () => {
 // 保存企业资料
 const saveProfile = () => {
   // 实际应该调用后端API
-  console.log('保存企业资料:', companyForm.value);
+  console.log("保存企业资料:", companyForm.value);
   // 模拟保存成功
-  alert('企业资料保存成功！');
+  alert("企业资料保存成功！");
   isEditing.value = false;
 };
 
 // 文件上传相关方法
 const handlePreview = (file) => {
-  console.log('预览文件:', file);
+  console.log("预览文件:", file);
 };
 
 const handleRemove = (file) => {
-  console.log('删除文件:', file);
-  const index = fileList.value.findIndex(item => item.name === file.name);
+  console.log("删除文件:", file);
+  const index = fileList.value.findIndex((item) => item.name === file.name);
   if (index !== -1) {
     fileList.value.splice(index, 1);
   }
@@ -243,7 +260,7 @@ const beforeRemove = (file) => {
 };
 
 const handleExceed = (files, fileList) => {
-  alert('只能上传一个文件');
+  alert("只能上传一个文件");
 };
 
 // 获取企业资料
@@ -257,19 +274,19 @@ const fetchCompanyProfile = async () => {
     //   const data = await response.json();
     //   companyForm.value = data;
     // }
-    
+
     // 模拟数据已经在初始化时设置
-    console.log('获取企业资料成功');
+    console.log("获取企业资料成功");
   } catch (err) {
-    console.error('获取企业资料失败:', err);
-    alert('获取企业资料失败，请稍后重试');
+    console.error("获取企业资料失败:", err);
+    alert("获取企业资料失败，请稍后重试");
   }
 };
 
 onMounted(() => {
   // 页面加载时获取企业资料
   fetchCompanyProfile();
-  console.log('Company Profile mounted');
+  console.log("Company Profile mounted");
 });
 </script>
 
