@@ -3,12 +3,17 @@ package com.employment.controller;
 import com.employment.entity.Job;
 import com.employment.repository.JobRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Sort;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/jobs")
@@ -17,75 +22,58 @@ public class StudentJobApiController {
     @Autowired
     private JobRepository jobRepository;
 
-    // 获取所有活跃的岗位，支持筛选
-    @GetMapping
-    public List<Job> getJobs(
-            @RequestParam(required = false) String industry,
-            @RequestParam(required = false) String salary,
-            @RequestParam(required = false) String experience,
-            @RequestParam(required = false) String keyword
-    ) {
+    // 学生端分页查询岗位
+    @RequestMapping(value = "/page", method = RequestMethod.GET)
+    public Page<Job> getJobsByPage(
+            @RequestParam(value = "title", required = false) String title,
+            @RequestParam(value = "industry", required = false) String industry,
+            @RequestParam(value = "salary", required = false) String salary,
+            @RequestParam(value = "experience", required = false) String experience,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size) {
         try {
-            // 获取所有活跃的岗位
-            List<Job> allJobs = jobRepository.findByIsActiveTrue();
-            
-            // 根据筛选条件过滤
-            return allJobs.stream()
-                    .filter(job -> {
-                        // 行业筛选
-                        if (industry != null && !industry.isEmpty() && !industry.equals(job.getIndustry())) {
-                            return false;
-                        }
-                        // 薪资范围筛选
-                        if (salary != null && !salary.isEmpty()) {
-                            String salaryRange = job.getSalaryRange();
-                            switch (salary) {
-                                case "0-10":
-                                    if (!salaryRange.contains("10K以下")) return false;
-                                    break;
-                                case "10-20":
-                                    if (!salaryRange.contains("10K-20K")) return false;
-                                    break;
-                                case "20-30":
-                                    if (!salaryRange.contains("20K-30K")) return false;
-                                    break;
-                                case "30+":
-                                    if (!salaryRange.contains("30K以上")) return false;
-                                    break;
-                            }
-                        }
-                        // 工作经验筛选
-                        if (experience != null && !experience.isEmpty()) {
-                            String workExperience = job.getWorkExperience();
-                            switch (experience) {
-                                case "0":
-                                    if (!workExperience.contains("应届毕业生")) return false;
-                                    break;
-                                case "1-3":
-                                    if (!workExperience.contains("1-3年")) return false;
-                                    break;
-                                case "3-5":
-                                    if (!workExperience.contains("3-5年")) return false;
-                                    break;
-                                case "5+":
-                                    if (!workExperience.contains("5年以上")) return false;
-                                    break;
-                            }
-                        }
-                        // 关键词搜索
-                        if (keyword != null && !keyword.isEmpty()) {
-                            if (!job.getTitle().contains(keyword) && 
-                                (job.getCompany() == null || !job.getCompany().getCompanyName().contains(keyword)) &&
-                                (job.getResponsibilities() == null || !job.getResponsibilities().contains(keyword))) {
-                                return false;
-                            }
-                        }
-                        return true;
-                    })
-                    .toList();
+            System.out.println("学生端分页查询岗位");
+            System.out.println("title: " + title);
+            System.out.println("industry: " + industry);
+            System.out.println("salary: " + salary);
+            System.out.println("experience: " + experience);
+            System.out.println("page: " + page);
+            System.out.println("size: " + size);
+
+            // 构建排序
+            Sort sort = Sort.by(Sort.Direction.DESC, "publishDate");
+            // 构建分页请求
+            Pageable pageable = PageRequest.of(page, size, sort);
+
+            // 根据条件查询
+            Page<Job> jobPage;
+
+            // 根据条件查询，使用安全的查询方法
+            if (title != null) {
+                jobPage = jobRepository.findActiveJobsWithCompanyByTitleContaining(title, pageable);
+            } else if (industry != null) {
+                jobPage = jobRepository.findActiveJobsWithCompanyByIndustry(industry, pageable);
+            } else if (salary != null) {
+                jobPage = jobRepository.findActiveJobsWithCompanyBySalaryRange(salary, pageable);
+            } else if (experience != null) {
+                jobPage = jobRepository.findActiveJobsWithCompanyByWorkExperience(experience, pageable);
+            } else {
+                jobPage = jobRepository.findActiveJobsWithCompany(pageable);
+            }
+
+            // 获取过滤后的岗位列表
+            List<Job> filteredJobs = jobPage.getContent();
+
+            // 创建新的Page对象返回
+            jobPage = new PageImpl<>(filteredJobs, pageable, jobPage.getTotalElements());
+
+            System.out.println("查询结果: " + jobPage.getTotalElements() + " 条记录");
+            return jobPage;
         } catch (Exception e) {
             e.printStackTrace();
-            return List.of();
+            // 打印错误日志
+            System.out.println("查询岗位失败: " + e.getMessage());
+            throw new RuntimeException("查询岗位失败: " + e.getMessage());
         }
     }
 }

@@ -2,6 +2,8 @@ package com.employment.repository;
 
 import com.employment.entity.Job;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
@@ -41,4 +43,20 @@ public interface JobRepository extends JpaRepository<Job, Long> {
     
     Page<Job> findByCompanyId(
             Long companyId, Pageable pageable);
+    
+    // 学生端分页查询接口
+    @Query("SELECT j FROM Job j LEFT JOIN j.company c WHERE j.active = true AND c IS NOT NULL")
+    Page<Job> findActiveJobsWithCompany(Pageable pageable);
+    
+    @Query("SELECT j FROM Job j LEFT JOIN j.company c WHERE j.active = true AND c IS NOT NULL AND j.title LIKE %:title%")
+    Page<Job> findActiveJobsWithCompanyByTitleContaining(@Param("title") String title, Pageable pageable);
+    
+    @Query("SELECT j FROM Job j LEFT JOIN j.company c WHERE j.active = true AND c IS NOT NULL AND j.industry = :industry")
+    Page<Job> findActiveJobsWithCompanyByIndustry(@Param("industry") String industry, Pageable pageable);
+    
+    @Query("SELECT j FROM Job j LEFT JOIN j.company c WHERE j.active = true AND c IS NOT NULL AND j.salaryRange = :salaryRange")
+    Page<Job> findActiveJobsWithCompanyBySalaryRange(@Param("salaryRange") String salaryRange, Pageable pageable);
+    
+    @Query("SELECT j FROM Job j LEFT JOIN j.company c WHERE j.active = true AND c IS NOT NULL AND j.workExperience = :workExperience")
+    Page<Job> findActiveJobsWithCompanyByWorkExperience(@Param("workExperience") String workExperience, Pageable pageable);
 }

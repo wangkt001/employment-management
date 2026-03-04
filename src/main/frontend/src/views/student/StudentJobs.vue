@@ -276,24 +276,62 @@ const fetchJobs = async () => {
       params.append("industry", selectedIndustry.value);
     }
     if (searchKeyword.value) {
-      params.append("keyword", searchKeyword.value);
+      params.append("title", searchKeyword.value);
     }
     if (selectedSalary.value) {
-      params.append("salary", selectedSalary.value);
+      // 转换薪资范围格式
+      let salaryValue = selectedSalary.value;
+      switch (salaryValue) {
+        case "0-10":
+          salaryValue = "10K以下";
+          break;
+        case "10-20":
+          salaryValue = "10K-20K";
+          break;
+        case "20-30":
+          salaryValue = "20K-30K";
+          break;
+        case "30+":
+          salaryValue = "30K以上";
+          break;
+      }
+      params.append("salary", salaryValue);
     }
     if (selectedExperience.value) {
-      params.append("experience", selectedExperience.value);
+      // 转换工作经验格式
+      let experienceValue = selectedExperience.value;
+      switch (experienceValue) {
+        case "0":
+          experienceValue = "应届毕业生";
+          break;
+        case "1-3":
+          experienceValue = "1-3年";
+          break;
+        case "3-5":
+          experienceValue = "3-5年";
+          break;
+        case "5+":
+          experienceValue = "5年以上";
+          break;
+      }
+      params.append("experience", experienceValue);
     }
+    // 添加分页参数
+    params.append("page", (currentPage.value - 1).toString()); // 后端从0开始
+    params.append("size", pageSize.value.toString());
 
-    const response = await fetch(`/employment/api/jobs?${params.toString()}`, {
-      credentials: "include",
-    });
+    const response = await fetch(
+      `/employment/api/jobs/page?${params.toString()}`,
+      {
+        credentials: "include",
+      },
+    );
     if (response.ok) {
       const data = await response.json();
       // 调试：打印后端返回的数据结构
       console.log("后端返回的数据:", data);
       // 转换后端数据格式以匹配前端需求
-      jobs.value = data.map((job) => {
+      jobs.value = data.content.map((job) => {
         // 调试：打印每个岗位的详细信息
         console.log("岗位数据:", job);
         return {
@@ -314,6 +352,8 @@ const fetchJobs = async () => {
             : new Date().toISOString().split("T")[0],
         };
       });
+      // 更新总页数
+      totalPages.value = data.totalPages;
     } else {
       error.value = "获取岗位数据失败";
     }
@@ -325,73 +365,13 @@ const fetchJobs = async () => {
   }
 };
 
-// 筛选后的岗位
+// 筛选后的岗位（直接使用后端返回的数据，因为后端已经进行了筛选和分页）
 const filteredJobs = computed(() => {
-  let result = jobs.value.filter((job) => {
-    const matchesKeyword =
-      job.title.includes(searchKeyword.value) ||
-      job.company.includes(searchKeyword.value) ||
-      job.description.includes(searchKeyword.value);
-    const matchesIndustry =
-      !selectedIndustry.value || job.industry === selectedIndustry.value;
-    const matchesSalary =
-      !selectedSalary.value ||
-      {
-        "0-10": job.salary.includes("10K以下"),
-        "10-20": job.salary.includes("10K-20K"),
-        "20-30": job.salary.includes("20K-30K"),
-        "30+": job.salary.includes("30K以上"),
-      }[selectedSalary.value];
-    const matchesExperience =
-      !selectedExperience.value ||
-      {
-        0: job.experience.includes("应届毕业生"),
-        "1-3": job.experience.includes("1-3年"),
-        "3-5": job.experience.includes("3-5年"),
-        "5+": job.experience.includes("5年以上"),
-      }[selectedExperience.value];
-    return (
-      matchesKeyword && matchesIndustry && matchesSalary && matchesExperience
-    );
-  });
-
-  // 分页
-  const startIndex = (currentPage.value - 1) * pageSize.value;
-  const endIndex = startIndex + pageSize.value;
-  return result.slice(startIndex, endIndex);
+  return jobs.value;
 });
 
-// 总页数
-const totalPages = computed(() => {
-  const filteredCount = jobs.value.filter((job) => {
-    const matchesKeyword =
-      job.title.includes(searchKeyword.value) ||
-      job.company.includes(searchKeyword.value) ||
-      job.description.includes(searchKeyword.value);
-    const matchesIndustry =
-      !selectedIndustry.value || job.industry === selectedIndustry.value;
-    const matchesSalary =
-      !selectedSalary.value ||
-      {
-        "0-10": job.salary.includes("10K以下"),
-        "10-20": job.salary.includes("10K-20K"),
-        "20-30": job.salary.includes("20K-30K"),
-        "30+": job.salary.includes("30K以上"),
-      }[selectedSalary.value];
-    const matchesExperience =
-      !selectedExperience.value ||
-      {
-        0: job.experience.includes("应届毕业生"),
-        "1-3": job.experience.includes("1-3年"),
-        "3-5": job.experience.includes("3-5年"),
-        "5+": job.experience.includes("5年以上"),
-      }[selectedExperience.value];
-    return (
-      matchesKeyword && matchesIndustry && matchesSalary && matchesExperience
-    );
-  }).length;
-  return Math.ceil(filteredCount / pageSize.value);
-});
+// 总页数（从后端返回的数据中获取）
+const totalPages = ref(1);
 
 // 切换侧边栏
 const toggleSidebar = () => {
