@@ -2,6 +2,7 @@ package com.employment.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Data
 @Entity
@@ -25,4 +26,14 @@ public class Company {
     
     @Column(name = "is_verified", nullable = false, columnDefinition = "boolean default false")
     private boolean isVerified = false;
+    
+    @JsonProperty("isVerified")
+    public boolean isVerified() {
+        return isVerified;
+    }
+    
+    @JsonProperty("isVerified")
+    public void setVerified(boolean isVerified) {
+        this.isVerified = isVerified;
+    }
 }

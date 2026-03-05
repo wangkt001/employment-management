@@ -32,7 +32,7 @@
             </div>
             <div class="stat-content">
               <h3>总用户数</h3>
-              <p class="stat-value">100</p>
+              <p class="stat-value">{{ stats.totalUsers || 0 }}</p>
             </div>
           </div>
           <div class="stat-card">
@@ -41,7 +41,7 @@
             </div>
             <div class="stat-content">
               <h3>就业岗位</h3>
-              <p class="stat-value">50</p>
+              <p class="stat-value">{{ stats.totalJobs || 0 }}</p>
             </div>
           </div>
           <div class="stat-card">
@@ -50,7 +50,7 @@
             </div>
             <div class="stat-content">
               <h3>投递记录</h3>
-              <p class="stat-value">200</p>
+              <p class="stat-value">{{ stats.totalApplications || 0 }}</p>
             </div>
           </div>
           <div class="stat-card">
@@ -59,7 +59,7 @@
             </div>
             <div class="stat-content">
               <h3>企业数</h3>
-              <p class="stat-value">30</p>
+              <p class="stat-value">{{ stats.totalCompanies || 0 }}</p>
             </div>
           </div>
         </div>
@@ -114,6 +114,14 @@ const role = ref(localStorage.getItem("role") || "STUDENT");
 // 活动数据
 const activities = ref([]);
 const isLoading = ref(false);
+
+// 统计数据
+const stats = ref({
+  totalUsers: 0,
+  totalJobs: 0,
+  totalApplications: 0,
+  totalCompanies: 0
+});
 
 // 计算用户角色文本和样式
 const roleText = computed(() => {
@@ -273,11 +281,28 @@ const logout = () => {
   router.push("/login");
 };
 
-onMounted(() => {
+// 获取统计数据
+const fetchStats = async () => {
+  try {
+    const response = await fetch("/employment/api/admin/dashboard", {
+      credentials: "include",
+    });
+    if (response.ok) {
+      const data = await response.json();
+      stats.value = data;
+    }
+  } catch (error) {
+    console.error("获取统计数据失败:", error);
+  }
+};
+
+onMounted(async () => {
   // 页面加载时的初始化逻辑
   console.log("Dashboard mounted");
   // 生成活动数据
   activities.value = generateActivities();
+  // 获取统计数据
+  await fetchStats();
 });
 </script>
 

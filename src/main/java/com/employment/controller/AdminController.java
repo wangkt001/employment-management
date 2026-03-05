@@ -2,10 +2,12 @@ package com.employment.controller;
 
 import com.employment.entity.Company;
 import com.employment.entity.Job;
+import com.employment.entity.Student;
 import com.employment.entity.User;
 import com.employment.repository.ApplicationRepository;
 import com.employment.repository.CompanyRepository;
 import com.employment.repository.JobRepository;
+import com.employment.repository.StudentRepository;
 import com.employment.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -37,6 +39,9 @@ public class AdminController {
     private ApplicationRepository applicationRepository;
 
     @Autowired
+    private StudentRepository studentRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     // 获取所有用户
@@ -60,6 +65,17 @@ public class AdminController {
                 Company company = companyRepository.findByUserId(user.getId());
                 if (company != null) {
                     userMap.put("companyId", company.getId());
+                }
+            }
+            // 如果是学生角色，查询关联的学生信息
+            else if ("STUDENT".equals(user.getRole())) {
+                Student student = studentRepository.findByUserId(user.getId());
+                if (student != null) {
+                    userMap.put("studentId", student.getStudentId());
+                    userMap.put("major", student.getMajor());
+                    userMap.put("education", student.getEducation());
+                    userMap.put("school", student.getSchool());
+                    userMap.put("selfIntroduction", student.getSelfIntroduction());
                 }
             }
 
@@ -100,6 +116,17 @@ public class AdminController {
             company.setUser(user);
             companyRepository.save(company);
         }
+        // 如果是学生角色，则创建学生信息
+        else if ("STUDENT".equals(user.getRole())) {
+            Student student = new Student();
+            student.setUser(user);
+            student.setStudentId((String) userData.get("studentId"));
+            student.setMajor((String) userData.get("major"));
+            student.setEducation((String) userData.get("education"));
+            student.setSchool((String) userData.get("school"));
+            student.setSelfIntroduction((String) userData.get("selfIntroduction"));
+            studentRepository.save(student);
+        }
 
         return user;
     }
@@ -134,6 +161,18 @@ public class AdminController {
                     .orElseThrow(() -> new RuntimeException("企业不存在"));
             company.setUser(existingUser);
             companyRepository.save(company);
+        }
+        // 如果是学生角色，则更新学生信息
+        else if ("STUDENT".equals(existingUser.getRole())) {
+            Student student = studentRepository.findByUserId(existingUser.getId());
+            if (student != null) {
+                student.setStudentId((String) userData.get("studentId"));
+                student.setMajor((String) userData.get("major"));
+                student.setEducation((String) userData.get("education"));
+                student.setSchool((String) userData.get("school"));
+                student.setSelfIntroduction((String) userData.get("selfIntroduction"));
+                studentRepository.save(student);
+            }
         }
 
         return existingUser;
@@ -213,7 +252,7 @@ public class AdminController {
         company.setScale(companyRequest.getScale());
         company.setBusinessLicense(companyRequest.getBusinessLicense());
         company.setDescription(companyRequest.getDescription());
-        company.setVerified(false);
+        company.setVerified(companyRequest.isVerified());
 
         return companyRepository.save(company);
     }
@@ -259,6 +298,47 @@ public class AdminController {
         return companyRepository.save(company);
     }
 
+    // 获取统计数据
+    @GetMapping("/dashboard")
+    public Map<String, Object> getDashboardStats() {
+        Map<String, Object> stats = new HashMap<>();
+
+        // 总用户数
+        long totalUsers = userRepository.count();
+        stats.put("totalUsers", totalUsers);
+
+        // 就业岗位数（只统计已上架的）
+        long totalJobs = jobRepository.countByActiveTrue();
+        stats.put("totalJobs", totalJobs);
+
+        // 投递记录数
+        long totalApplications = applicationRepository.count();
+        stats.put("totalApplications", totalApplications);
+
+        // 企业数
+        long totalCompanies = companyRepository.count();
+        stats.put("totalCompanies", totalCompanies);
+
+        // 学生用户数
+        long studentCount = userRepository.countByRole("STUDENT");
+        stats.put("studentCount", studentCount);
+
+        // 企业用户数
+        long companyCount = userRepository.countByRole("COMPANY");
+        stats.put("companyCount", companyCount);
+
+        // 岗位发布率（已上架岗位数 / 总岗位数）
+        long totalJobsAll = jobRepository.count();
+        double jobPostingRate = totalJobsAll > 0 ? (double) totalJobs / totalJobsAll * 100 : 0;
+        stats.put("jobPostingRate", Math.round(jobPostingRate));
+
+        // 简历投递率（投递记录数 / 学生用户数）
+        double applicationRate = studentCount > 0 ? (double) totalApplications / studentCount * 100 : 0;
+        stats.put("applicationRate", Math.round(applicationRate));
+
+        return stats;
+    }
+
     // 企业请求DTO
     public static class CompanyRequest {
         private String companyName;
@@ -266,7 +346,7 @@ public class AdminController {
         private String scale;
         private String businessLicense;
         private String description;
-        private boolean verified;
+        private boolean isVerified;
 
         // Getters and Setters
         public String getCompanyName() {
@@ -310,11 +390,11 @@ public class AdminController {
         }
 
         public boolean isVerified() {
-            return verified;
+            return isVerified;
         }
 
-        public void setVerified(boolean verified) {
-            this.verified = verified;
+        public void setVerified(boolean isVerified) {
+            this.isVerified = isVerified;
         }
     }
 }

@@ -70,9 +70,7 @@
           <StatusStates
             :is-loading="isLoading"
             :error="error"
-            :is-empty="
-              !isLoading && !error && filteredCompanies.length === 0
-            "
+            :is-empty="!isLoading && !error && filteredCompanies.length === 0"
             type="companies"
             @retry="loadCompanies"
           />
@@ -93,13 +91,20 @@
           >
             <el-table-column type="selection" width="55" />
             <el-table-column prop="id" label="企业ID" width="80" />
-            <el-table-column prop="companyName" label="企业名称" min-width="200" />
+            <el-table-column
+              prop="companyName"
+              label="企业名称"
+              min-width="200"
+            />
             <el-table-column prop="industry" label="行业" width="120" />
             <el-table-column prop="scale" label="规模" width="100" />
             <el-table-column label="状态" width="100">
               <template #default="scope">
-                <el-tag :type="scope.row.isVerified ? 'success' : 'warning'" size="small">
-                  {{ scope.row.isVerified ? '已认证' : '未认证' }}
+                <el-tag
+                  :type="scope.row.isVerified ? 'success' : 'warning'"
+                  size="small"
+                >
+                  {{ scope.row.isVerified ? "已认证" : "未认证" }}
                 </el-tag>
               </template>
             </el-table-column>
@@ -130,10 +135,12 @@
                     size="small"
                     :type="scope.row.isVerified ? 'warning' : 'success'"
                     plain
-                    @click="toggleVerification(scope.row.id, !scope.row.isVerified)"
+                    @click="
+                      toggleVerification(scope.row.id, !scope.row.isVerified)
+                    "
                     class="action-btn"
                   >
-                    {{ scope.row.isVerified ? '取消认证' : '认证' }}
+                    {{ scope.row.isVerified ? "取消认证" : "认证" }}
                   </el-button>
                 </div>
               </template>
@@ -227,7 +234,6 @@
               rows="3"
             />
           </div>
-
         </form>
         <template #footer>
           <span class="dialog-footer">
@@ -388,18 +394,21 @@ const loadCompanies = async () => {
   try {
     // 构建查询参数
     const params = new URLSearchParams();
-    params.append('page', currentPage.value);
-    params.append('size', pageSize.value);
+    params.append("page", currentPage.value);
+    params.append("size", pageSize.value);
     if (searchKeyword.value) {
-      params.append('keyword', searchKeyword.value);
+      params.append("keyword", searchKeyword.value);
     }
-    if (statusFilter.value !== 'all') {
-      params.append('status', statusFilter.value);
+    if (statusFilter.value !== "all") {
+      params.append("status", statusFilter.value);
     }
-    
-    const response = await fetch(`/employment/api/admin/companies?${params.toString()}`, {
-      credentials: "include",
-    });
+
+    const response = await fetch(
+      `/employment/api/admin/companies?${params.toString()}`,
+      {
+        credentials: "include",
+      },
+    );
     if (response.ok) {
       const data = await response.json();
       companies.value = data.companies;
@@ -420,8 +429,6 @@ const loadCompanies = async () => {
 const filteredCompanies = computed(() => {
   return companies.value;
 });
-
-
 
 // 切换侧边栏
 const toggleSidebar = () => {
@@ -457,9 +464,9 @@ const addCompany = async () => {
       scale: newCompany.value.scale,
       businessLicense: newCompany.value.businessLicense,
       description: newCompany.value.description,
-      verified: false
+      isVerified: false,
     };
-    
+
     const response = await fetch("/employment/api/admin/companies", {
       method: "POST",
       headers: {
@@ -528,17 +535,20 @@ const updateCompany = async () => {
       scale: editCompany.value.scale,
       businessLicense: editCompany.value.businessLicense,
       description: editCompany.value.description,
-      verified: editCompany.value.isVerified
+      isVerified: editCompany.value.isVerified,
     };
-    
-    const response = await fetch(`/employment/api/admin/companies/${editCompany.value.id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
+
+    const response = await fetch(
+      `/employment/api/admin/companies/${editCompany.value.id}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updateData),
+        credentials: "include",
       },
-      body: JSON.stringify(updateData),
-      credentials: "include",
-    });
+    );
 
     if (response.ok) {
       // 重新加载企业列表
@@ -561,10 +571,13 @@ const updateCompany = async () => {
 const deleteCompany = async (companyId) => {
   if (confirm("确定要删除这个企业吗？")) {
     try {
-      const response = await fetch(`/employment/api/admin/companies/${companyId}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
+      const response = await fetch(
+        `/employment/api/admin/companies/${companyId}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        },
+      );
 
       if (response.ok) {
         // 重新加载企业列表
@@ -593,9 +606,14 @@ const toggleVerification = async (companyId, newStatus) => {
     );
 
     if (response.ok) {
+      // 如果当前有状态筛选，重置为全部
+      if (statusFilter.value !== "all") {
+        statusFilter.value = "all";
+        currentPage.value = 1;
+      }
       // 重新加载企业列表
       await loadCompanies();
-      alert(`企业已${newStatus ? '认证' : '取消认证'}！`);
+      alert(`企业已${newStatus ? "认证" : "取消认证"}！`);
     } else {
       const error = await response.text();
       alert("切换认证状态失败: " + error);

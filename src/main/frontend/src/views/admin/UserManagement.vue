@@ -235,6 +235,59 @@
               </el-option>
             </el-select>
           </div>
+          <div class="form-group" v-if="newUser.role === 'STUDENT'">
+            <label for="new-student-id">学号</label>
+            <el-input
+              type="text"
+              id="new-student-id"
+              v-model="newUser.studentId"
+              required
+              placeholder="请输入学号"
+            />
+          </div>
+          <div class="form-group" v-if="newUser.role === 'STUDENT'">
+            <label for="new-major">专业</label>
+            <el-input
+              type="text"
+              id="new-major"
+              v-model="newUser.major"
+              required
+              placeholder="请输入专业"
+            />
+          </div>
+          <div class="form-group" v-if="newUser.role === 'STUDENT'">
+            <label for="new-education">学历</label>
+            <el-select
+              id="new-education"
+              v-model="newUser.education"
+              placeholder="请选择学历"
+            >
+              <el-option label="高中" value="高中"></el-option>
+              <el-option label="大专" value="大专"></el-option>
+              <el-option label="本科" value="本科"></el-option>
+              <el-option label="硕士" value="硕士"></el-option>
+              <el-option label="博士" value="博士"></el-option>
+            </el-select>
+          </div>
+          <div class="form-group" v-if="newUser.role === 'STUDENT'">
+            <label for="new-school">毕业院校</label>
+            <el-input
+              type="text"
+              id="new-school"
+              v-model="newUser.school"
+              placeholder="请输入毕业院校"
+            />
+          </div>
+          <div class="form-group" v-if="newUser.role === 'STUDENT'">
+            <label for="new-self-introduction">自我介绍</label>
+            <el-input
+              type="textarea"
+              id="new-self-introduction"
+              v-model="newUser.selfIntroduction"
+              placeholder="请输入自我介绍"
+              rows="3"
+            />
+          </div>
           <div class="form-group">
             <label for="new-email">邮箱</label>
             <el-input
@@ -335,6 +388,59 @@
               </el-option>
             </el-select>
           </div>
+          <div class="form-group" v-if="editUser.role === 'STUDENT'">
+            <label for="edit-student-id">学号</label>
+            <el-input
+              type="text"
+              id="edit-student-id"
+              v-model="editUser.studentId"
+              required
+              placeholder="请输入学号"
+            />
+          </div>
+          <div class="form-group" v-if="editUser.role === 'STUDENT'">
+            <label for="edit-major">专业</label>
+            <el-input
+              type="text"
+              id="edit-major"
+              v-model="editUser.major"
+              required
+              placeholder="请输入专业"
+            />
+          </div>
+          <div class="form-group" v-if="editUser.role === 'STUDENT'">
+            <label for="edit-education">学历</label>
+            <el-select
+              id="edit-education"
+              v-model="editUser.education"
+              placeholder="请选择学历"
+            >
+              <el-option label="高中" value="高中"></el-option>
+              <el-option label="大专" value="大专"></el-option>
+              <el-option label="本科" value="本科"></el-option>
+              <el-option label="硕士" value="硕士"></el-option>
+              <el-option label="博士" value="博士"></el-option>
+            </el-select>
+          </div>
+          <div class="form-group" v-if="editUser.role === 'STUDENT'">
+            <label for="edit-school">毕业院校</label>
+            <el-input
+              type="text"
+              id="edit-school"
+              v-model="editUser.school"
+              placeholder="请输入毕业院校"
+            />
+          </div>
+          <div class="form-group" v-if="editUser.role === 'STUDENT'">
+            <label for="edit-self-introduction">自我介绍</label>
+            <el-input
+              type="textarea"
+              id="edit-self-introduction"
+              v-model="editUser.selfIntroduction"
+              placeholder="请输入自我介绍"
+              rows="3"
+            />
+          </div>
           <div class="form-group">
             <label for="edit-email">邮箱</label>
             <el-input
@@ -411,6 +517,11 @@ const newUser = ref({
   phone: "",
   password: "",
   companyId: null,
+  studentId: "",
+  major: "",
+  education: "",
+  school: "",
+  selfIntroduction: "",
 });
 
 // 编辑用户表单数据
@@ -423,6 +534,11 @@ const editUser = ref({
   phone: "",
   password: "",
   companyId: null,
+  studentId: "",
+  major: "",
+  education: "",
+  school: "",
+  selfIntroduction: "",
 });
 
 // 用户数据
@@ -596,6 +712,11 @@ const closeAddUserDialog = () => {
     phone: "",
     password: "",
     companyId: null,
+    studentId: "",
+    major: "",
+    education: "",
+    school: "",
+    selfIntroduction: "",
   };
 };
 
@@ -641,6 +762,11 @@ const editUserHandler = (user) => {
     phone: user.phone,
     password: "", // 密码留空，不修改
     companyId: user.companyId || null,
+    studentId: user.studentId || "",
+    major: user.major || "",
+    education: user.education || "",
+    school: user.school || "",
+    selfIntroduction: user.selfIntroduction || "",
   };
   // 打开编辑对话框
   showEditUserDialog.value = true;
@@ -659,6 +785,11 @@ const closeEditUserDialog = () => {
     phone: "",
     password: "",
     companyId: null,
+    studentId: "",
+    major: "",
+    education: "",
+    school: "",
+    selfIntroduction: "",
   };
 };
 
@@ -673,6 +804,11 @@ const updateUser = async () => {
       email: editUser.value.email,
       phone: editUser.value.phone,
       companyId: editUser.value.companyId,
+      studentId: editUser.value.studentId,
+      major: editUser.value.major,
+      education: editUser.value.education,
+      school: editUser.value.school,
+      selfIntroduction: editUser.value.selfIntroduction,
     };
 
     // 如果密码不为空，则包含密码

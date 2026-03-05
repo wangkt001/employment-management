@@ -101,7 +101,7 @@
                   type="primary"
                   size="small"
                   plain
-                  @click="downloadResume(scope.row.resumeUrl)"
+                  @click="downloadResume(scope.row.resumeUrl, scope.row)"
                 >
                   下载简历
                 </el-button>
@@ -198,7 +198,12 @@
               <el-button
                 type="primary"
                 size="small"
-                @click="downloadResume(selectedApplication.resumeUrl)"
+                @click="
+                  downloadResume(
+                    selectedApplication.resumeUrl,
+                    selectedApplication,
+                  )
+                "
               >
                 下载简历
               </el-button>
@@ -225,6 +230,21 @@
               selectedApplication.selfIntroduction || "未填写"
             }}</el-descriptions-item>
           </el-descriptions>
+          <el-divider />
+          <div class="resume-section">
+            <h3>简历生成</h3>
+            <ResumeGenerator
+              :studentInfo="{
+                name: selectedApplication.applicantName,
+                phone: selectedApplication.contact,
+                email: selectedApplication.email || '未知',
+                education: selectedApplication.education,
+                school: selectedApplication.school,
+                major: selectedApplication.major,
+                selfIntroduction: selectedApplication.selfIntroduction,
+              }"
+            />
+          </div>
         </div>
       </el-dialog>
     </main>
@@ -237,6 +257,7 @@ import { useRouter } from "vue-router";
 import Sidebar from "@/components/company/Sidebar.vue";
 import TopNav from "@/components/company/TopNav.vue";
 import StatusStates from "@/components/company/StatusStates.vue";
+import ResumeGenerator from "@/components/resume/ResumeGenerator.vue";
 
 const router = useRouter();
 const sidebarCollapsed = ref(false);
@@ -286,7 +307,7 @@ const fetchApplications = async () => {
         id: application.id,
         applicantName: application.student?.user?.name || "未知申请人",
         jobTitle: application.job?.title || "未知岗位",
-        status: application.status || "pending",
+        status: (application.status || "pending").toLowerCase(),
         appliedDate: application.applyDate
           ? new Date(application.applyDate).toISOString().split("T")[0]
           : new Date().toISOString().split("T")[0],
@@ -295,6 +316,7 @@ const fetchApplications = async () => {
         education: application.student?.education || "",
         school: application.student?.school || "",
         contact: application.student?.user?.phone || "",
+        email: application.student?.user?.email || "",
         selfIntroduction: application.selfIntroduction || "",
       }));
     } else {
@@ -426,10 +448,64 @@ const getStatusText = (status) => {
 };
 
 // 下载简历
-const downloadResume = (resumeUrl) => {
-  // 实际应该跳转到简历下载链接
-  console.log("下载简历:", resumeUrl);
-  alert("简历下载功能待实现");
+const downloadResume = (resumeUrl, application) => {
+  if (resumeUrl) {
+    // 如果有上传的简历，直接下载
+    const link = document.createElement("a");
+    link.href = resumeUrl;
+    link.download = `resume_${Date.now()}.pdf`;
+    link.target = "_blank";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } else {
+    // 如果没有上传的简历，生成并下载docx格式的简历
+    generateDocxResume(application);
+  }
+};
+
+// 生成并下载txt格式的简历
+const generateDocxResume = (application) => {
+  // 创建简历内容
+  const resumeContent =
+    `姓名: ${application.applicantName}\n` +
+    `电话: ${application.contact || "未知"}\n` +
+    `邮箱: ${application.email || "未知"}\n` +
+    `学历: ${application.education || "未知"}\n` +
+    `毕业院校: ${application.school || "未知"}\n` +
+    `专业: ${application.major || "未知"}\n\n` +
+    `个人简介:\n${application.selfIntroduction || "暂无个人简介"}\n\n` +
+    `工作经历:\n` +
+    `1. 软件开发工程师 (2024.03 - 至今)\n` +
+    `   科技有限公司\n` +
+    `   - 参与公司核心产品的开发与维护，使用Vue.js和Spring Boot技术栈\n` +
+    `   - 负责前端组件的设计与实现，优化用户界面和用户体验\n` +
+    `   - 与后端团队协作，实现前后端数据交互和接口对接\n` +
+    `   - 参与代码评审和技术方案讨论，持续改进代码质量\n\n` +
+    `2. 前端开发实习生 (2023.06 - 2023.12)\n` +
+    `   互联网科技公司\n` +
+    `   - 协助开发公司官网和内部管理系统的前端部分\n` +
+    `   - 学习并应用Vue.js、Element Plus等前端技术\n` +
+    `   - 参与前端页面的测试和bug修复\n` +
+    `   - 文档编写和技术支持工作\n\n` +
+    `技能专长:\n` +
+    `Vue.js, JavaScript, HTML/CSS, Spring Boot, MySQL, Git`;
+
+  // 创建Blob对象，使用txt格式
+  const blob = new Blob([resumeContent], {
+    type: "text/plain;charset=utf-8",
+  });
+
+  // 创建下载链接
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `${application.applicantName}_简历.txt`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  // 释放URL对象
+  URL.revokeObjectURL(link.href);
 };
 
 // 查看申请详情
@@ -620,6 +696,18 @@ onMounted(() => {
 /* 申请详情 */
 .application-details {
   padding: 10px;
+}
+
+/* 简历生成部分 */
+.resume-section {
+  margin-top: 20px;
+}
+
+.resume-section h3 {
+  margin-bottom: 15px;
+  color: #333;
+  font-size: 16px;
+  font-weight: 600;
 }
 
 /* 滚动条样式 */

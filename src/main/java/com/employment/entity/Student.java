@@ -23,7 +23,10 @@ public class Student {
     
     private String department;
     private String grade;
+    private String education;
+    private String school;
     private String resumeUrl;
     private String expectedSalary;
     private String careerDirection;
+    private String selfIntroduction;
 }

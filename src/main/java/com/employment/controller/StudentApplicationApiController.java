@@ -152,7 +152,7 @@ public class StudentApplicationApiController {
             Application application = new Application();
             application.setStudent(student); // 使用Student作为学生
             application.setJob(job);
-            application.setStatus("PENDING");
+            application.setStatus("pending");
             application.setApplyDate(new Date());
             System.out.println("申请对象创建成功，studentId: " + student.getId() + ", jobId: " + job.getId());
 
