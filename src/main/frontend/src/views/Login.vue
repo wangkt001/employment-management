@@ -3,9 +3,11 @@
     <el-card class="login-card" shadow="hover">
       <div class="login-header">
         <h1>大学生就业信息管理系统</h1>
-        <p>请登录以访问系统</p>
+        <p>{{ isRegister ? "请注册以访问系统" : "请登录以访问系统" }}</p>
       </div>
-      <div class="login-form">
+
+      <!-- 登录表单 -->
+      <div v-if="!isRegister" class="login-form">
         <div class="form-item">
           <label class="form-label">用户名</label>
           <div class="input-wrapper">
@@ -54,8 +56,204 @@
           </button>
         </div>
       </div>
+
+      <!-- 注册表单 -->
+      <div v-else class="register-form">
+        <div class="form-item">
+          <label class="form-label">用户名</label>
+          <div class="input-wrapper">
+            <i class="input-icon i-ep-user"></i>
+            <input
+              type="text"
+              v-model="registerForm.username"
+              placeholder="请输入用户名"
+              class="custom-input"
+              @input="checkUsername"
+            />
+          </div>
+          <div
+            v-if="usernameCheckResult.message"
+            class="username-check-result"
+            :class="usernameCheckResult.exists ? 'error' : 'success'"
+          >
+            {{ isCheckingUsername ? "检查中..." : usernameCheckResult.message }}
+          </div>
+        </div>
+        <div class="form-item">
+          <label class="form-label">密码</label>
+          <div class="input-wrapper">
+            <i class="input-icon i-ep-lock"></i>
+            <input
+              :type="showRegisterPassword ? 'text' : 'password'"
+              v-model="registerForm.password"
+              placeholder="请输入密码"
+              class="custom-input"
+            />
+            <i
+              :class="[
+                'password-toggle',
+                showRegisterPassword ? 'i-ep-eye-off' : 'i-ep-eye',
+              ]"
+              @click="showRegisterPassword = !showRegisterPassword"
+            ></i>
+          </div>
+        </div>
+        <div class="form-item">
+          <label class="form-label">姓名</label>
+          <div class="input-wrapper">
+            <i class="input-icon i-ep-user-filled"></i>
+            <input
+              type="text"
+              v-model="registerForm.name"
+              placeholder="请输入姓名"
+              class="custom-input"
+            />
+          </div>
+        </div>
+        <div class="form-item">
+          <label class="form-label">角色</label>
+          <div class="input-wrapper">
+            <i class="input-icon i-ep-avatar"></i>
+            <el-select
+              v-model="registerForm.role"
+              placeholder="请选择角色"
+              class="role-select"
+            >
+              <el-option label="学生" value="STUDENT"></el-option>
+              <el-option label="企业" value="COMPANY"></el-option>
+            </el-select>
+          </div>
+        </div>
+
+        <!-- 学生特有字段 -->
+        <div v-if="registerForm.role === 'STUDENT'" class="form-item">
+          <label class="form-label">学号</label>
+          <div class="input-wrapper">
+            <i class="input-icon i-ep-document"></i>
+            <input
+              type="text"
+              v-model="registerForm.studentId"
+              placeholder="请输入学号"
+              class="custom-input"
+            />
+          </div>
+        </div>
+        <div v-if="registerForm.role === 'STUDENT'" class="form-item">
+          <label class="form-label">专业</label>
+          <div class="input-wrapper">
+            <i class="input-icon i-ep-book"></i>
+            <input
+              type="text"
+              v-model="registerForm.major"
+              placeholder="请输入专业"
+              class="custom-input"
+            />
+          </div>
+        </div>
+        <div v-if="registerForm.role === 'STUDENT'" class="form-item">
+          <label class="form-label">学历</label>
+          <div class="input-wrapper">
+            <i class="input-icon i-ep-education"></i>
+            <el-select
+              v-model="registerForm.education"
+              placeholder="请选择学历"
+              class="role-select"
+            >
+              <el-option label="高中" value="高中"></el-option>
+              <el-option label="大专" value="大专"></el-option>
+              <el-option label="本科" value="本科"></el-option>
+              <el-option label="硕士" value="硕士"></el-option>
+              <el-option label="博士" value="博士"></el-option>
+            </el-select>
+          </div>
+        </div>
+        <div v-if="registerForm.role === 'STUDENT'" class="form-item">
+          <label class="form-label">毕业院校</label>
+          <div class="input-wrapper">
+            <i class="input-icon i-ep-school"></i>
+            <input
+              type="text"
+              v-model="registerForm.school"
+              placeholder="请输入毕业院校"
+              class="custom-input"
+            />
+          </div>
+        </div>
+        <div v-if="registerForm.role === 'STUDENT'" class="form-item">
+          <label class="form-label">自我介绍</label>
+          <div class="input-wrapper">
+            <i class="input-icon i-ep-chat-dot-round"></i>
+            <textarea
+              v-model="registerForm.selfIntroduction"
+              placeholder="请输入自我介绍"
+              class="custom-input"
+              rows="3"
+            ></textarea>
+          </div>
+        </div>
+
+        <!-- 企业特有字段 -->
+        <div v-if="registerForm.role === 'COMPANY'" class="form-item">
+          <label class="form-label">企业ID</label>
+          <div class="input-wrapper">
+            <i class="input-icon i-ep-office-building"></i>
+            <input
+              type="number"
+              v-model="registerForm.companyId"
+              placeholder="请输入企业ID"
+              class="custom-input"
+            />
+          </div>
+        </div>
+
+        <div class="form-item">
+          <label class="form-label">邮箱</label>
+          <div class="input-wrapper">
+            <i class="input-icon i-ep-message"></i>
+            <input
+              type="email"
+              v-model="registerForm.email"
+              placeholder="请输入邮箱"
+              class="custom-input"
+            />
+          </div>
+        </div>
+        <div class="form-item">
+          <label class="form-label">电话</label>
+          <div class="input-wrapper">
+            <i class="input-icon i-ep-phone"></i>
+            <input
+              type="tel"
+              v-model="registerForm.phone"
+              placeholder="请输入电话"
+              class="custom-input"
+            />
+          </div>
+        </div>
+        <div class="form-item" v-if="error">
+          <el-alert :title="error" type="error" show-icon :closable="false" />
+        </div>
+        <div class="form-item">
+          <button
+            type="button"
+            @click="register"
+            :disabled="isLoading"
+            class="login-button"
+          >
+            {{ isLoading ? "注册中..." : "注册" }}
+          </button>
+        </div>
+      </div>
+
       <div class="login-footer">
-        <p>还没有账号？<a href="#">点击注册</a></p>
+        <p v-if="!isRegister">
+          还没有账号？<a href="#" @click.prevent="isRegister = true"
+            >点击注册</a
+          >
+        </p>
+        <p v-else>
+          已有账号？<a href="#" @click.prevent="isRegister = false">点击登录</a>
+        </p>
       </div>
     </el-card>
   </div>
@@ -67,14 +265,34 @@ import { useRouter, useRoute } from "vue-router";
 
 const router = useRouter();
 const route = useRoute();
+const isRegister = ref(false);
 const form = ref({
   username: "",
   password: "",
   remember: false,
 });
+const registerForm = ref({
+  username: "",
+  password: "",
+  name: "",
+  role: "STUDENT",
+  email: "",
+  phone: "",
+  // 学生特有字段
+  studentId: "",
+  major: "",
+  education: "",
+  school: "",
+  selfIntroduction: "",
+  // 企业特有字段
+  companyId: null,
+});
 const error = ref("");
 const isLoading = ref(false);
 const showPassword = ref(false);
+const showRegisterPassword = ref(false);
+const usernameCheckResult = ref({ exists: false, message: "" });
+const isCheckingUsername = ref(false);
 
 // 处理URL中的错误参数
 onMounted(() => {
@@ -130,6 +348,7 @@ const login = async () => {
             // 存储用户信息
             localStorage.setItem("username", user.username);
             localStorage.setItem("userId", user.id.toString());
+            localStorage.setItem("role", user.role);
             localStorage.setItem("isAdmin", isAdmin.toString());
             localStorage.setItem("isStudent", isStudent.toString());
             localStorage.setItem("isCompany", isCompany.toString());
@@ -168,6 +387,136 @@ const login = async () => {
     }
   } catch (err) {
     console.error("登录请求失败:", err);
+    error.value = "网络错误，请稍后重试";
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// 检查用户名是否存在
+const checkUsername = async () => {
+  const username = registerForm.value.username;
+  if (!username || username.length < 2) {
+    usernameCheckResult.value = { exists: false, message: "" };
+    return;
+  }
+
+  isCheckingUsername.value = true;
+  try {
+    const response = await fetch(
+      `/employment/api/check-username?username=${encodeURIComponent(username)}`,
+      {
+        credentials: "include",
+      },
+    );
+    if (response.ok) {
+      const result = await response.json();
+      if (result.success) {
+        usernameCheckResult.value = {
+          exists: result.exists,
+          message: result.message,
+        };
+      }
+    }
+  } catch (err) {
+    console.error("检查用户名失败:", err);
+  } finally {
+    isCheckingUsername.value = false;
+  }
+};
+
+const register = async () => {
+  error.value = "";
+  isLoading.value = true;
+
+  try {
+    // 验证表单
+    if (
+      !registerForm.value.username ||
+      !registerForm.value.password ||
+      !registerForm.value.name ||
+      !registerForm.value.email ||
+      !registerForm.value.phone
+    ) {
+      error.value = "请填写所有必填字段";
+      isLoading.value = false;
+      return;
+    }
+
+    // 检查用户名是否已存在
+    if (usernameCheckResult.value.exists) {
+      error.value = "用户名已存在";
+      isLoading.value = false;
+      return;
+    }
+
+    // 调用注册接口
+    const registerResponse = await fetch("/employment/api/register", {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(registerForm.value),
+    });
+
+    // 检查是否注册成功
+    if (registerResponse.ok) {
+      try {
+        const registerResult = await registerResponse.json();
+        if (registerResult.success) {
+          const user = registerResult.user;
+          if (user && user.username) {
+            // 根据用户角色设置权限
+            const isAdmin =
+              user.role === "ADMIN" ||
+              user.role === "admin" ||
+              user.role === "Admin";
+            const isStudent =
+              user.role === "STUDENT" ||
+              user.role === "student" ||
+              user.role === "Student";
+            const isCompany =
+              user.role === "COMPANY" ||
+              user.role === "company" ||
+              user.role === "Company";
+
+            // 存储用户信息
+            localStorage.setItem("username", user.username);
+            localStorage.setItem("userId", user.id.toString());
+            localStorage.setItem("role", user.role);
+            localStorage.setItem("isAdmin", isAdmin.toString());
+            localStorage.setItem("isStudent", isStudent.toString());
+            localStorage.setItem("isCompany", isCompany.toString());
+
+            console.log("注册成功，localStorage存储:", {
+              username: localStorage.getItem("username"),
+              userId: localStorage.getItem("userId"),
+              isAdmin: localStorage.getItem("isAdmin"),
+              isStudent: localStorage.getItem("isStudent"),
+              isCompany: localStorage.getItem("isCompany"),
+            });
+
+            // 注册成功，跳转到仪表盘
+            router.push("/dashboard");
+          } else {
+            // 用户信息为空，注册失败
+            error.value = "注册失败，无法获取用户信息";
+          }
+        } else {
+          // 注册失败
+          error.value = registerResult.message || "注册失败";
+        }
+      } catch (jsonError) {
+        console.error("解析注册结果失败:", jsonError);
+        error.value = "注册失败，无法解析响应";
+      }
+    } else {
+      // 注册请求失败
+      error.value = "注册失败，请稍后重试";
+    }
+  } catch (err) {
+    console.error("注册请求失败:", err);
     error.value = "网络错误，请稍后重试";
   } finally {
     isLoading.value = false;
@@ -243,6 +592,14 @@ const login = async () => {
   position: relative;
   display: flex;
   align-items: center;
+  border: 1px solid #333;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.input-wrapper:focus-within {
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
 }
 
 .input-icon {
@@ -270,7 +627,7 @@ const login = async () => {
 .custom-input {
   width: 100%;
   padding: 12px 40px 12px 36px;
-  border: 1px solid #333;
+  border: none;
   border-radius: 8px;
   font-size: 14px;
   color: #333;
@@ -285,8 +642,7 @@ const login = async () => {
 }
 
 .custom-input:focus {
-  border-color: #667eea;
-  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+  outline: none;
 }
 
 .custom-input::placeholder {
@@ -336,6 +692,44 @@ const login = async () => {
 
 .login-footer a:hover {
   text-decoration: underline;
+}
+
+.role-select {
+  width: 100%;
+  padding: 12px 40px 12px 36px;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  color: #333;
+  background: transparent;
+  transition: all 0.3s ease;
+}
+
+.role-select:focus {
+  outline: none;
+}
+
+.register-form {
+  padding: 0 20px 20px;
+}
+
+.username-check-result {
+  font-size: 12px;
+  margin-top: 5px;
+  padding: 5px 10px;
+  border-radius: 4px;
+}
+
+.username-check-result.error {
+  color: #f56c6c;
+  background-color: #fef0f0;
+  border: 1px solid #fbc4c4;
+}
+
+.username-check-result.success {
+  color: #67c23a;
+  background-color: #f0f9eb;
+  border: 1px solid #c2e7b0;
 }
 
 /* 响应式设计 */

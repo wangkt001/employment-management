@@ -120,7 +120,7 @@ const stats = ref({
   totalUsers: 0,
   totalJobs: 0,
   totalApplications: 0,
-  totalCompanies: 0
+  totalCompanies: 0,
 });
 
 // 计算用户角色文本和样式

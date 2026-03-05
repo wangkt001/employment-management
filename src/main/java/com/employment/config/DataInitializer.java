@@ -37,48 +37,50 @@ public class DataInitializer implements CommandLineRunner {
             userRepository.save(admin);
             System.out.println("初始化admin用户成功");
         }
-        
+
         // 初始化测试用户ceshi
-        if (userRepository.findByUsername("ceshi") == null) {
-            User ceshi = new User();
-            ceshi.setUsername("ceshi");
-            ceshi.setPassword(passwordEncoder.encode("12345"));
-            ceshi.setRole("STUDENT");
-            ceshi.setName("测试用户");
-            ceshi.setEmail("ceshi@example.com");
-            ceshi.setPhone("13900139000");
-            ceshi.setAddress("上海市浦东新区");
-            ceshi.setActive(true);
-            userRepository.save(ceshi);
-            System.out.println("初始化ceshi用户成功");
-        }
-        
+        // if (userRepository.findByUsername("ceshi") == null) {
+        // User ceshi = new User();
+        // ceshi.setUsername("ceshi");
+        // ceshi.setPassword(passwordEncoder.encode("12345"));
+        // ceshi.setRole("STUDENT");
+        // ceshi.setName("测试用户");
+        // ceshi.setEmail("ceshi@example.com");
+        // ceshi.setPhone("13900139000");
+        // ceshi.setAddress("上海市浦东新区");
+        // ceshi.setActive(true);
+        // userRepository.save(ceshi);
+        // System.out.println("初始化ceshi用户成功");
+        // }
+
         // 初始化公司用户
-        /*if (userRepository.findByUsername("company") == null) {
-            // 创建公司用户
-            User companyUser = new User();
-            companyUser.setUsername("company");
-            companyUser.setPassword(passwordEncoder.encode("123456"));
-            companyUser.setRole("COMPANY");
-            companyUser.setName("测试企业");
-            companyUser.setEmail("company@example.com");
-            companyUser.setPhone("13700137000");
-            companyUser.setAddress("广州市天河区");
-            companyUser.setActive(true);
-            userRepository.save(companyUser);
-            System.out.println("初始化company用户成功");
-            
-            // 创建对应的公司信息
-            Company company = new Company();
-            company.setUser(companyUser);
-            company.setCompanyName("测试科技有限公司");
-            company.setIndustry("互联网");
-            company.setScale("50-100人");
-            company.setBusinessLicense("123456789012345");
-            company.setDescription("一家专注于技术创新的科技公司");
-            company.setVerified(true);
-            companyRepository.save(company);
-            System.out.println("初始化公司信息成功，companyId: " + company.getId());
-        }*/
+        /*
+         * if (userRepository.findByUsername("company") == null) {
+         * // 创建公司用户
+         * User companyUser = new User();
+         * companyUser.setUsername("company");
+         * companyUser.setPassword(passwordEncoder.encode("123456"));
+         * companyUser.setRole("COMPANY");
+         * companyUser.setName("测试企业");
+         * companyUser.setEmail("company@example.com");
+         * companyUser.setPhone("13700137000");
+         * companyUser.setAddress("广州市天河区");
+         * companyUser.setActive(true);
+         * userRepository.save(companyUser);
+         * System.out.println("初始化company用户成功");
+         * 
+         * // 创建对应的公司信息
+         * Company company = new Company();
+         * company.setUser(companyUser);
+         * company.setCompanyName("测试科技有限公司");
+         * company.setIndustry("互联网");
+         * company.setScale("50-100人");
+         * company.setBusinessLicense("123456789012345");
+         * company.setDescription("一家专注于技术创新的科技公司");
+         * company.setVerified(true);
+         * companyRepository.save(company);
+         * System.out.println("初始化公司信息成功，companyId: " + company.getId());
+         * }
+         */
     }
 }

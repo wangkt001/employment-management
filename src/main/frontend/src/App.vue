@@ -21,6 +21,7 @@ onMounted(async () => {
         if (user) {
           // 存储用户信息
           localStorage.setItem("username", user.username);
+          localStorage.setItem("role", user.role);
           localStorage.setItem(
             "isAdmin",
             (

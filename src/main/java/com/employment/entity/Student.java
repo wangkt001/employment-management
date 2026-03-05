@@ -10,17 +10,17 @@ public class Student {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     @OneToOne
     @JoinColumn(name = "user_id", unique = true, nullable = false)
     private User user;
-    
+
     @Column(nullable = false)
     private String studentId;
-    
+
     @Column(nullable = false)
     private String major;
-    
+
     private String department;
     private String grade;
     private String education;

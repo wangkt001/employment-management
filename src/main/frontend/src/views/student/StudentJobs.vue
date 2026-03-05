@@ -480,6 +480,7 @@ onMounted(async () => {
   overflow: hidden;
   background: #ffffff;
   box-shadow: -2px 0 10px rgba(0, 0, 0, 0.05);
+  height: 100vh;
 }
 
 /* 页面内容 */
@@ -488,7 +489,7 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  padding: 20px;
+  padding: 0;
 }
 
 /* 搜索和筛选 */
@@ -498,6 +499,9 @@ onMounted(async () => {
   margin: 20px;
   border-radius: 10px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .search-box {
@@ -599,6 +603,8 @@ onMounted(async () => {
   flex: 1;
   padding: 0 20px 20px;
   overflow-y: auto;
+  margin: 0 20px;
+  min-height: 0;
 }
 
 .job-card {
@@ -799,6 +805,8 @@ onMounted(async () => {
   margin: 0 20px 20px;
   border-radius: 10px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  position: relative;
+  z-index: 5;
 }
 
 .pagination-button {

@@ -297,17 +297,21 @@ const totalApplications = computed(() => {
 
 // 获取状态类型
 const getStatusType = (status) => {
-  switch (status) {
+  // 转换为大写，确保匹配
+  const upperStatus = status?.toUpperCase();
+  switch (upperStatus) {
     case "PENDING":
       return "info";
+    case "APPROVED":
+      return "success";
+    case "REJECTED":
+      return "danger";
     case "REVIEWED":
       return "primary";
     case "INTERVIEW":
       return "warning";
     case "OFFER":
       return "success";
-    case "REJECTED":
-      return "danger";
     default:
       return "info";
   }
@@ -315,17 +319,21 @@ const getStatusType = (status) => {
 
 // 获取状态文本
 const getStatusText = (status) => {
-  switch (status) {
+  // 转换为大写，确保匹配
+  const upperStatus = status?.toUpperCase();
+  switch (upperStatus) {
     case "PENDING":
       return "待处理";
+    case "APPROVED":
+      return "已通过";
+    case "REJECTED":
+      return "已拒绝";
     case "REVIEWED":
       return "已查看";
     case "INTERVIEW":
       return "面试";
     case "OFFER":
       return "录用";
-    case "REJECTED":
-      return "拒绝";
     default:
       return status;
   }

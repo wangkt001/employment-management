@@ -10,12 +10,12 @@
         <p>专业: {{ major }}</p>
       </div>
     </div>
-    
+
     <div class="resume-section">
       <h2>个人简介</h2>
       <p>{{ selfIntroduction || "暂无个人简介" }}</p>
     </div>
-    
+
     <div class="resume-section">
       <h2>工作经历</h2>
       <div class="experience-item">
@@ -31,7 +31,7 @@
           <li>参与代码评审和技术方案讨论，持续改进代码质量</li>
         </ul>
       </div>
-      
+
       <div class="experience-item">
         <div class="experience-header">
           <h3>前端开发实习生</h3>
@@ -46,7 +46,7 @@
         </ul>
       </div>
     </div>
-    
+
     <div class="resume-section">
       <h2>技能专长</h2>
       <div class="skills">
@@ -62,37 +62,37 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed } from "vue";
 
 const props = defineProps({
   studentName: {
     type: String,
-    default: '未知'
+    default: "未知",
   },
   phone: {
     type: String,
-    default: '未知'
+    default: "未知",
   },
   email: {
     type: String,
-    default: '未知'
+    default: "未知",
   },
   education: {
     type: String,
-    default: '未知'
+    default: "未知",
   },
   school: {
     type: String,
-    default: '未知'
+    default: "未知",
   },
   major: {
     type: String,
-    default: '未知'
+    default: "未知",
   },
   selfIntroduction: {
     type: String,
-    default: ''
-  }
+    default: "",
+  },
 });
 </script>
 
@@ -101,11 +101,11 @@ const props = defineProps({
   max-width: 800px;
   margin: 0 auto;
   padding: 40px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   line-height: 1.6;
   color: #333;
   background: white;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
 .resume-header {

@@ -3,7 +3,7 @@
     <el-button type="primary" @click="generateAndDownloadResume">
       生成并下载简历
     </el-button>
-    
+
     <!-- 简历预览 -->
     <div v-if="showPreview" class="resume-preview">
       <h2>简历预览</h2>
@@ -18,30 +18,28 @@
           :selfIntroduction="studentInfo.selfIntroduction"
         />
       </div>
-      <el-button type="success" @click="downloadResume">
-        下载简历
-      </el-button>
+      <el-button type="success" @click="downloadResume"> 下载简历 </el-button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, defineProps } from 'vue';
-import ResumeTemplate from './ResumeTemplate.vue';
+import { ref, defineProps } from "vue";
+import ResumeTemplate from "./ResumeTemplate.vue";
 
 const props = defineProps({
   studentInfo: {
     type: Object,
     default: () => ({
-      name: '未知',
-      phone: '未知',
-      email: '未知',
-      education: '未知',
-      school: '未知',
-      major: '未知',
-      selfIntroduction: ''
-    })
-  }
+      name: "未知",
+      phone: "未知",
+      email: "未知",
+      education: "未知",
+      school: "未知",
+      major: "未知",
+      selfIntroduction: "",
+    }),
+  },
 });
 
 const showPreview = ref(false);
@@ -57,14 +55,16 @@ const generateAndDownloadResume = () => {
 
 const downloadResume = () => {
   if (!resumeContent.value) return;
-  
+
   // 使用浏览器打印功能
-  const printWindow = window.open('', '_blank');
-  printWindow.document.write('<html><head><title>简历</title>');
-  printWindow.document.write('<style>@media print { body { margin: 0; } }</style>');
-  printWindow.document.write('</head><body>');
+  const printWindow = window.open("", "_blank");
+  printWindow.document.write("<html><head><title>简历</title>");
+  printWindow.document.write(
+    "<style>@media print { body { margin: 0; } }</style>",
+  );
+  printWindow.document.write("</head><body>");
   printWindow.document.write(resumeContent.value.innerHTML);
-  printWindow.document.write('</body></html>');
+  printWindow.document.write("</body></html>");
   printWindow.document.close();
   printWindow.print();
 };
