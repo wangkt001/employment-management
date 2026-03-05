@@ -2,7 +2,7 @@
 
 ## 项目简介
 
-本系统是一个基于Spring Boot的大学生就业信息管理系统，旨在为学生、企业和管理员提供便捷的就业信息管理服务。
+本系统是一个基于Spring Boot信息管理系统，旨在为学生、企业和管理员提供便捷的就业信息管理服务。
 
 ## 系统功能
 
@@ -15,76 +15,30 @@
 - 查看投递记录
 - 接收系统通知
 
-### 企业功能
-
 - 用户注册和登录
+
 - 发布和管理招聘岗位
 - 查看收到的简历
 - 处理投递申请
 - 接收系统通知
 
-### 管理员功能
+能
 
-- 用户管理
 - 统计分析
+
 - 系统管理
-- 接收系统通知
+- 接收系统
 
 ## 技术栈
 
-- **后端**：Spring Boot 3.2.0、Spring Security、Spring Data JPA
 - **前端**：Thymeleaf、Bootstrap 5
 - **数据库**：MySQL
-- **构建工具**：Maven
+  后端
 
-## 环境配置
+## 环载J -载Thym：lwaf、Brocsteap.java/technologies/downloads/#jdk17-windows
 
-### 1. 安装JDK 17
-
-1. 下载JDK 17安装包：
-   - 官方下载地址：https://www.oracle.com/java/technologies/downloads/#jdk17-windows
-   - 选择Windows x64 Installer
-
-2. 安装JDK：
-   - 双击安装包，按照向导完成安装
-   - 记住安装路径（默认：C:\Program Files\Java\jdk-17）
-
-3. 配置环境变量：
-   - 右键"此电脑" → "属性" → "高级系统设置" → "环境变量"
-   - 在"系统变量"中点击"新建"，添加：
-     - 变量名：JAVA_HOME
-     - 变量值：JDK安装路径（如：C:\Program Files\Java\jdk-17）
-   - 编辑"Path"变量，在开头添加：%JAVA_HOME%\bin
-   - 点击"确定"保存
-
-4. 验证安装：
-   - 打开命令提示符，输入：`java -version`
-   - 若显示JDK版本信息，则安装成功
-
-### 2. 安装MySQL
-
-1. 下载MySQL安装包：
-   - 官方下载地址：https://dev.mysql.com/downloads/installer/
-
-2. 安装MySQL：
-   - 按照安装向导完成安装
-   - 设置root用户密码为：root
-
-3. 创建数据库：
-   - 打开MySQL命令行或MySQL Workbench
-   - 执行：`CREATE DATABASE employment_system CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`
-
-### 3. 运行项目
-
-1. 克隆项目到本地
-
-2. 修改数据库配置（可选）：
-   - 编辑 `src/main/resources/application.properties` 文件
-   - 修改数据库连接信息（默认使用root/root）
-
-3. 构建项目：
-   - 打开命令提示符，进入项目目录
-   - 执行：`mvn clean package`
+-数据库indMySQL
+装JDK：
 
 4. 运行项目：
    - 执行：`java -jar target/employment-management-system-1.0.0.jar`
@@ -120,28 +74,83 @@ employment-management-system/
 │   ├── main/
 │   │   ├── java/com/employment/
 │   │   │   ├── Application.java          # 应用主类
-│   │   │   ├── config/                   # 配置类
+│   │   │   ├── croot                   # 配置类
 │   │   │   ├── controller/               # 控制器
 │   │   │   ├── entity/                  # 实体类
 │   │   │   └── repository/              # 数据仓库
 │   │   └── resources/
 │   │       ├── templates/                # Thymeleaf模板
-│   │       └── application.properties    # 应用配置
-│   └── test/                             # 测试代码
-├── pom.xml                               # Maven配置
-└── README.md                             # 项目说明
+│   │  运行项目
+
+1. 克隆项目到本地
+
+2. 修改数据库配置（可选）：
+   - 编辑 `src/main/res urc└s/application─propertie ` 文件application.properties    # 应用配置
+   - 修改数据库连接信息（默认使用root/root）│   └── test/                             # 测试代码
+
+3──构建项目：
+   - 打开命令提示符，进入项目目录
+   - 执行：`mvn clxan package`
+
+4m 运行项目：
+   - 执行：`lava -jar target/employment-management- ystem-1.0.0.jar`
+   - 或使用IDE运行 `Application.java` 类
+
+5. 访问系统                           # Maven配置
+└── R打开浏览器，访问md      l calh st:8080  mp  yment 项目说明
+
+##`系统使用
+
+###`1.`注册账号
+
+"学学生用户：生"角色
+- 企业用户：选择"企业"角色
+- 管理员账号：默认已配置（用户名：aamin，密码123）
+
+###根2.据登录系统
+
+-角使用注册的账号登录
+色进入相应的功能界面
+1. 首次运行时，系统会自动创建数据库表结构
+### 2. 功能使用
+
+- **学生**需浏览岗位、投递简历、查看投递记录要等待管理员审核后才能发布岗位
+-3**企业**：发布岗位、管理岗位、查看收到的简历
+-.**管理员**：管理用户、查看统计分析
+
+## 项目结构
+
+```
+
+employment-management系system/
+├── src/
+│ ├──统mai生/
+│ │ ├── java/com/empl产ym境nt/
+│ │ │ ├──建Application.ja使a # 应用主类
+│ │ │ ├── config/ # 配置类
+│ │ │ ├── controller/ # 控制器
+│ │ │ ├── entity/ # 实体类
+│ │ │ └── repository/ # 数据仓库MySQL
+│ │4. └──确res urces/
+│ │ ├── templates/ # Thymel7af模板
+│ │ └── application和propertiey # 应用配置置
+│ └── test/ # 测试代码
+├── pom.xml # Maven配置
+└── README.md # 联系说明
+
 ```
 
 ## 注意事项
 
-1. 首次运行时，系统会自动创建数据库表结构
+1. 首次方式时，系统会自动创建数据库表结构
 2. 企业用户需要等待管理员审核后才能发布岗位
 3. 系统默认使用H2内存数据库，生产环境建议使用MySQL
 4. 请确保JDK 17和MySQL已正确安装和配置
 
-## 联系方式
+有问题联系，式
 
 如有问题，请联系系统管理员。
+```
 荐）
 
 1. **启动后端服务**：
@@ -156,7 +165,7 @@ employment-management-system/
    - 等待前端服务启动完成
 
 3. **访问系统**：
-   - 前端：http://localhost:5173
+   - 前端：http://localhost:3000
    - 后端API：http://localhost:8080/employment/api
 
 ### 方法二：使用构建产物运行
