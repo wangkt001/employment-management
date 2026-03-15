@@ -12,10 +12,10 @@ import java.util.List;
 
 @Controller
 public class StudentJobController {
-    
+
     @Autowired
     private JobRepository jobRepository;
-    
+
     @GetMapping("/student/jobs")
     public String jobs(Model model, @RequestParam(required = false) String keyword) {
         List<Job> jobs;
@@ -23,12 +23,12 @@ public class StudentJobController {
             jobs = jobRepository.findByTitleContainingOrPositionContaining(keyword, keyword);
             model.addAttribute("keyword", keyword);
         } else {
-            jobs = jobRepository.findByIsActiveTrue();
+            jobs = jobRepository.findByActiveTrue();
         }
         model.addAttribute("jobs", jobs);
         return "student/jobs";
     }
-    
+
     @GetMapping("/student/job/detail")
     public String jobDetail(@RequestParam Long id, Model model) {
         Job job = jobRepository.findById(id).orElse(null);
