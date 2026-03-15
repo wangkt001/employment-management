@@ -16,4 +16,6 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
     List<Application> findByJob(Job job);
     
     void deleteByJobId(Long jobId);
+    
+    void deleteByStudentId(Long studentId);
 }

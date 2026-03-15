@@ -181,6 +181,37 @@ public class AdminController {
     // 删除用户
     @DeleteMapping("/users/{id}")
     public void deleteUser(@PathVariable Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("用户不存在"));
+        
+        // 如果是学生角色，先删除关联的学生信息和申请记录
+        if ("STUDENT".equals(user.getRole())) {
+            Student student = studentRepository.findByUserId(id);
+            if (student != null) {
+                // 删除该学生的所有申请记录
+                applicationRepository.deleteByStudentId(student.getId());
+                // 删除学生记录
+                studentRepository.delete(student);
+            }
+        }
+        // 如果是企业角色，先删除关联的企业信息、职位和申请记录
+        else if ("COMPANY".equals(user.getRole())) {
+            Company company = companyRepository.findByUserId(id);
+            if (company != null) {
+                // 获取该企业的所有职位
+                List<Job> jobs = jobRepository.findByCompanyId(company.getId());
+                // 删除每个职位的所有申请
+                for (Job job : jobs) {
+                    applicationRepository.deleteByJobId(job.getId());
+                }
+                // 删除企业的所有职位
+                jobRepository.deleteByCompanyId(company.getId());
+                // 删除企业记录
+                companyRepository.delete(company);
+            }
+        }
+        
+        // 最后删除用户
         userRepository.deleteById(id);
     }
 
