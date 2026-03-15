@@ -11,7 +11,7 @@
     <div class="sidebar-header">
       <h2 v-show="!sidebarCollapsed">就业信息管理系统</h2>
     </div>
-    
+
     <!-- 公共菜单 -->
     <el-menu-item index="/dashboard">
       <template #icon>
@@ -19,7 +19,7 @@
       </template>
       <span>首页</span>
     </el-menu-item>
-    
+
     <!-- 管理员菜单 -->
     <template v-if="isAdmin">
       <el-menu-item index="/admin/users">
@@ -41,7 +41,7 @@
         <span>统计分析</span>
       </el-menu-item>
     </template>
-    
+
     <!-- 企业菜单 -->
     <template v-if="isCompany">
       <el-menu-item index="/company/jobs">
@@ -57,7 +57,7 @@
         <span>申请管理</span>
       </el-menu-item>
     </template>
-    
+
     <!-- 学生菜单 -->
     <template v-if="isStudent">
       <el-menu-item index="/student/jobs">
@@ -73,7 +73,7 @@
         <span>我的申请</span>
       </el-menu-item>
     </template>
-    
+
     <!-- 退出登录 -->
     <el-menu-item index="logout" @click="logout">
       <template #icon>
@@ -85,42 +85,46 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { ref, computed } from "vue";
+import { useRouter, useRoute } from "vue-router";
 
-const router = useRouter()
-const route = useRoute()
+const router = useRouter();
+const route = useRoute();
 
 const props = defineProps({
   collapsed: {
     type: Boolean,
-    default: false
-  }
-})
+    default: false,
+  },
+});
 
-const emit = defineEmits(['toggle-sidebar', 'logout'])
+const emit = defineEmits(["toggle-sidebar", "logout"]);
 
-const sidebarCollapsed = ref(props.collapsed)
+const sidebarCollapsed = ref(props.collapsed);
 
 // 获取用户角色
-const isAdmin = ref(localStorage.getItem('isAdmin') === 'true')
-const isStudent = ref(localStorage.getItem('isStudent') === 'true')
-const isCompany = ref(localStorage.getItem('isCompany') === 'true')
+const isAdmin = ref(localStorage.getItem("isAdmin") === "true");
+const isStudent = ref(localStorage.getItem("isStudent") === "true");
+const isCompany = ref(localStorage.getItem("isCompany") === "true");
 
 const activeIndex = computed(() => {
-  return route.path || '/dashboard'
-})
+  return route.path || "/dashboard";
+});
 
 const toggleSidebar = () => {
-  sidebarCollapsed.value = !sidebarCollapsed.value
-  emit('toggle-sidebar')
-}
+  sidebarCollapsed.value = !sidebarCollapsed.value;
+  emit("toggle-sidebar");
+};
 
 const logout = () => {
-  localStorage.clear()
-  router.push('/login')
-  emit('logout')
-}
+  // 清除本地存储
+  localStorage.clear();
+  sessionStorage.clear();
+
+  // 跳转到登录页
+  router.push("/login");
+  emit("logout");
+};
 </script>
 
 <style scoped>
@@ -133,7 +137,7 @@ const logout = () => {
 }
 
 .sidebar-menu::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;

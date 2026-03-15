@@ -87,7 +87,11 @@ const toggleSidebar = () => {
 };
 
 const logout = () => {
+  // 清除本地存储
   localStorage.clear();
+  sessionStorage.clear();
+
+  // 跳转到登录页
   router.push("/login");
 };
 </script>

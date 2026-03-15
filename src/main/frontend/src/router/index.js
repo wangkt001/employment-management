@@ -5,11 +5,13 @@ const router = createRouter({
   routes: [
     {
       path: "/",
-      redirect: "/dashboard",
+      name: "Home",
+      component: () => import("../views/Login.vue"),
     },
     {
       path: "/login",
-      redirect: "/index.html",
+      name: "Login",
+      component: () => import("../views/Login.vue"),
     },
     {
       path: "/index.html",
@@ -101,40 +103,54 @@ router.beforeEach((to, from, next) => {
   });
 
   // 检查是否是登录页面
-  if (to.path === "/index.html" || to.path.startsWith("/index.html?")) {
-    // 如果已经登录，重定向到dashboard
+  if (
+    to.path === "/" ||
+    to.path === "/index.html" ||
+    to.path === "/login" ||
+    to.path.startsWith("/index.html?")
+  ) {
+    // 如果已经登录，重定向到 dashboard
     if (isAuthenticated) {
-      console.log("已认证，重定向到dashboard");
+      console.log("已认证，重定向到 dashboard");
       next("/dashboard");
     } else {
       console.log("未认证，继续访问登录页");
       next();
     }
-  } else if (to.meta.requiresAuth && !isAuthenticated) {
+    return;
+  }
+
+  // 检查是否需要认证
+  if (to.meta.requiresAuth && !isAuthenticated) {
     console.log("未认证，重定向到登录页");
     next("/index.html");
-  } else if (
-    to.meta.requiresAdmin &&
-    localStorage.getItem("isAdmin") !== "true"
-  ) {
+    return;
+  }
+
+  // 检查管理员权限
+  if (to.meta.requiresAdmin && localStorage.getItem("isAdmin") !== "true") {
     console.log("不是管理员，重定向到仪表盘");
     next("/dashboard");
-  } else if (
-    to.meta.requiresStudent &&
-    localStorage.getItem("isStudent") !== "true"
-  ) {
+    return;
+  }
+
+  // 检查学生权限
+  if (to.meta.requiresStudent && localStorage.getItem("isStudent") !== "true") {
     console.log("不是学生，重定向到仪表盘");
     next("/dashboard");
-  } else if (
-    to.meta.requiresCompany &&
-    localStorage.getItem("isCompany") !== "true"
-  ) {
+    return;
+  }
+
+  // 检查企业权限
+  if (to.meta.requiresCompany && localStorage.getItem("isCompany") !== "true") {
     console.log("不是企业，重定向到仪表盘");
     next("/dashboard");
-  } else {
-    console.log("认证通过，继续访问");
-    next();
+    return;
   }
+
+  // 其他情况，继续访问
+  console.log("认证通过，继续访问");
+  next();
 });
 
 export default router;

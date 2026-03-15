@@ -4,7 +4,7 @@ import { resolve } from "path";
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: "/employment",
+  base: "/employment/",
   plugins: [vue()],
   resolve: {
     alias: {
@@ -18,14 +18,7 @@ export default defineConfig({
   server: {
     port: 3000,
     open: true,
-    historyApiFallback: {
-      rewrites: [
-        {
-          from: /^\/employment\/.*/,
-          to: "/employment/index.html",
-        },
-      ],
-    },
+    historyApiFallback: true,
     proxy: {
       "/employment/api": {
         target: "http://localhost:8080",
