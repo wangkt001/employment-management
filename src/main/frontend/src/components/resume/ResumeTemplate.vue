@@ -8,6 +8,7 @@
         <p>学历: {{ education }}</p>
         <p>毕业院校: {{ school }}</p>
         <p>专业: {{ major }}</p>
+        <p v-if="address">地址: {{ address }}</p>
       </div>
     </div>
 
@@ -17,54 +18,29 @@
     </div>
 
     <div class="resume-section">
-      <h2>工作经历</h2>
-      <div class="experience-item">
-        <div class="experience-header">
-          <h3>软件开发工程师</h3>
-          <span>2024.03 - 至今</span>
+      <h2>求职意向</h2>
+      <div class="intention-grid">
+        <div class="intention-item">
+          <span class="intention-label">职业方向</span>
+          <span>{{ careerDirection || "待补充" }}</span>
         </div>
-        <p class="company-name">科技有限公司</p>
-        <ul class="experience-details">
-          <li>参与公司核心产品的开发与维护，使用Vue.js和Spring Boot技术栈</li>
-          <li>负责前端组件的设计与实现，优化用户界面和用户体验</li>
-          <li>与后端团队协作，实现前后端数据交互和接口对接</li>
-          <li>参与代码评审和技术方案讨论，持续改进代码质量</li>
-        </ul>
-      </div>
-
-      <div class="experience-item">
-        <div class="experience-header">
-          <h3>前端开发实习生</h3>
-          <span>2023.06 - 2023.12</span>
+        <div class="intention-item">
+          <span class="intention-label">期望薪资</span>
+          <span>{{ expectedSalary || "待补充" }}</span>
         </div>
-        <p class="company-name">互联网科技公司</p>
-        <ul class="experience-details">
-          <li>协助开发公司官网和内部管理系统的前端部分</li>
-          <li>学习并应用Vue.js、Element Plus等前端技术</li>
-          <li>参与前端页面的测试和bug修复</li>
-          <li>文档编写和技术支持工作</li>
-        </ul>
       </div>
     </div>
 
     <div class="resume-section">
-      <h2>技能专长</h2>
-      <div class="skills">
-        <span class="skill-tag">Vue.js</span>
-        <span class="skill-tag">JavaScript</span>
-        <span class="skill-tag">HTML/CSS</span>
-        <span class="skill-tag">Spring Boot</span>
-        <span class="skill-tag">MySQL</span>
-        <span class="skill-tag">Git</span>
-      </div>
+      <h2>教育背景</h2>
+      <p>{{ school || "待补充学校信息" }} / {{ major || "待补充专业信息" }}</p>
+      <p>{{ education || "待补充学历信息" }}</p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed } from "vue";
-
-const props = defineProps({
+defineProps({
   studentName: {
     type: String,
     default: "未知",
@@ -77,6 +53,10 @@ const props = defineProps({
     type: String,
     default: "未知",
   },
+  address: {
+    type: String,
+    default: "",
+  },
   education: {
     type: String,
     default: "未知",
@@ -88,6 +68,14 @@ const props = defineProps({
   major: {
     type: String,
     default: "未知",
+  },
+  careerDirection: {
+    type: String,
+    default: "",
+  },
+  expectedSalary: {
+    type: String,
+    default: "",
   },
   selfIntroduction: {
     type: String,
@@ -142,57 +130,26 @@ const props = defineProps({
   padding-bottom: 5px;
 }
 
-.experience-item {
-  margin-bottom: 20px;
-}
-
-.experience-header {
+.intention-grid {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 5px;
+  flex-wrap: wrap;
+  gap: 16px;
 }
 
-.experience-header h3 {
-  font-size: 16px;
-  margin: 0;
+.intention-item {
+  min-width: 220px;
+  background: #f7f8fa;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 14px;
   color: #333;
 }
 
-.experience-header span {
-  font-size: 14px;
+.intention-label {
+  display: block;
+  margin-bottom: 6px;
   color: #666;
-}
-
-.company-name {
-  font-size: 14px;
-  color: #666;
-  margin-bottom: 10px;
-}
-
-.experience-details {
-  margin: 0;
-  padding-left: 20px;
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-.experience-details li {
-  margin-bottom: 5px;
-}
-
-.skills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.skill-tag {
-  background: #f0f0f0;
-  padding: 5px 12px;
-  border-radius: 15px;
-  font-size: 14px;
-  color: #666;
+  font-size: 12px;
 }
 
 @media print {

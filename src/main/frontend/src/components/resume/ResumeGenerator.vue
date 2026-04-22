@@ -12,9 +12,12 @@
           :studentName="studentInfo.name"
           :phone="studentInfo.phone"
           :email="studentInfo.email"
+          :address="studentInfo.address"
           :education="studentInfo.education"
           :school="studentInfo.school"
           :major="studentInfo.major"
+          :careerDirection="studentInfo.careerDirection"
+          :expectedSalary="studentInfo.expectedSalary"
           :selfIntroduction="studentInfo.selfIntroduction"
         />
       </div>

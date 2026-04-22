@@ -1,85 +1,60 @@
 <template>
   <div class="student-profile-container">
-    <!-- 侧边栏 -->
     <Sidebar
       :collapsed="sidebarCollapsed"
       @toggle-sidebar="toggleSidebar"
       @logout="logout"
     />
 
-    <!-- 主内容区 -->
     <main class="main-content">
-      <!-- 顶部导航栏 -->
       <TopNav
-        title="个人中心"
+        title="我的简历"
         :username="username"
         :role="role"
         @toggle-sidebar="toggleSidebar"
       />
 
-      <!-- 页面内容 -->
-      <div class="page-content">
-        <!-- 个人信息卡片 -->
+      <div class="page-content" v-loading="loading">
         <div class="profile-card">
           <div class="profile-header">
             <div class="profile-avatar">
-              <el-avatar size="100" :icon="'i-ep-user-filled'" class="avatar" />
-              <h2 class="profile-name">{{ username }}</h2>
-              <p class="profile-role">{{ roleText }}</p>
+              <el-avatar :size="88" class="avatar">
+                {{ (profile.name || username).slice(0, 1) }}
+              </el-avatar>
+              <div>
+                <h2 class="profile-name">{{ profile.name || username }}</h2>
+                <p class="profile-role">{{ roleText }}</p>
+              </div>
             </div>
             <div class="profile-actions">
-              <el-button
-                type="primary"
-                size="default"
-                @click="editProfile"
-                class="edit-profile-btn"
-              >
-                <template #icon>
-                  <el-icon><i-ep-edit /></el-icon>
-                </template>
-                编辑资料
-              </el-button>
+              <el-button @click="openEditDialog">编辑简历</el-button>
+              <el-button type="primary" @click="fetchResume">刷新</el-button>
             </div>
           </div>
 
-          <!-- 个人信息详情 -->
           <div class="profile-details">
             <div class="detail-section">
               <h3>基本信息</h3>
               <div class="detail-grid">
                 <div class="detail-item">
-                  <span class="detail-label">姓名：</span>
-                  <span class="detail-value">{{ userInfo.name || '未设置' }}</span>
+                  <span class="detail-label">姓名</span>
+                  <span class="detail-value">{{ displayValue(profile.name) }}</span>
                 </div>
                 <div class="detail-item">
-                  <span class="detail-label">性别：</span>
-                  <span class="detail-value">{{ userInfo.gender || '未设置' }}</span>
+                  <span class="detail-label">学号</span>
+                  <span class="detail-value">{{ displayValue(profile.studentId) }}</span>
                 </div>
                 <div class="detail-item">
-                  <span class="detail-label">年龄：</span>
-                  <span class="detail-value">{{ userInfo.age || '未设置' }}</span>
+                  <span class="detail-label">邮箱</span>
+                  <span class="detail-value">{{ displayValue(profile.email) }}</span>
                 </div>
                 <div class="detail-item">
-                  <span class="detail-label">出生日期：</span>
-                  <span class="detail-value">{{ userInfo.birthDate || '未设置' }}</span>
+                  <span class="detail-label">电话</span>
+                  <span class="detail-value">{{ displayValue(profile.phone) }}</span>
                 </div>
-              </div>
-            </div>
-
-            <div class="detail-section">
-              <h3>联系方式</h3>
-              <div class="detail-grid">
-                <div class="detail-item">
-                  <span class="detail-label">邮箱：</span>
-                  <span class="detail-value">{{ userInfo.email || '未设置' }}</span>
-                </div>
-                <div class="detail-item">
-                  <span class="detail-label">电话：</span>
-                  <span class="detail-value">{{ userInfo.phone || '未设置' }}</span>
-                </div>
-                <div class="detail-item">
-                  <span class="detail-label">地址：</span>
-                  <span class="detail-value">{{ userInfo.address || '未设置' }}</span>
+                <div class="detail-item full-width">
+                  <span class="detail-label">地址</span>
+                  <span class="detail-value">{{ displayValue(profile.address) }}</span>
                 </div>
               </div>
             </div>
@@ -88,20 +63,24 @@
               <h3>教育背景</h3>
               <div class="detail-grid">
                 <div class="detail-item">
-                  <span class="detail-label">学校：</span>
-                  <span class="detail-value">{{ userInfo.school || '未设置' }}</span>
+                  <span class="detail-label">学校</span>
+                  <span class="detail-value">{{ displayValue(profile.school) }}</span>
                 </div>
                 <div class="detail-item">
-                  <span class="detail-label">专业：</span>
-                  <span class="detail-value">{{ userInfo.major || '未设置' }}</span>
+                  <span class="detail-label">专业</span>
+                  <span class="detail-value">{{ displayValue(profile.major) }}</span>
                 </div>
                 <div class="detail-item">
-                  <span class="detail-label">学历：</span>
-                  <span class="detail-value">{{ userInfo.education || '未设置' }}</span>
+                  <span class="detail-label">院系</span>
+                  <span class="detail-value">{{ displayValue(profile.department) }}</span>
                 </div>
                 <div class="detail-item">
-                  <span class="detail-label">毕业时间：</span>
-                  <span class="detail-value">{{ userInfo.graduationDate || '未设置' }}</span>
+                  <span class="detail-label">年级</span>
+                  <span class="detail-value">{{ displayValue(profile.grade) }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">学历</span>
+                  <span class="detail-value">{{ displayValue(profile.education) }}</span>
                 </div>
               </div>
             </div>
@@ -110,156 +89,297 @@
               <h3>求职意向</h3>
               <div class="detail-grid">
                 <div class="detail-item">
-                  <span class="detail-label">期望职位：</span>
-                  <span class="detail-value">{{ userInfo.desiredJob || '未设置' }}</span>
+                  <span class="detail-label">职业方向</span>
+                  <span class="detail-value">{{ displayValue(profile.careerDirection) }}</span>
                 </div>
                 <div class="detail-item">
-                  <span class="detail-label">期望薪资：</span>
-                  <span class="detail-value">{{ userInfo.desiredSalary || '未设置' }}</span>
-                </div>
-                <div class="detail-item">
-                  <span class="detail-label">期望地点：</span>
-                  <span class="detail-value">{{ userInfo.desiredLocation || '未设置' }}</span>
-                </div>
-                <div class="detail-item">
-                  <span class="detail-label">工作类型：</span>
-                  <span class="detail-value">{{ userInfo.jobType || '未设置' }}</span>
+                  <span class="detail-label">期望薪资</span>
+                  <span class="detail-value">{{ displayValue(profile.expectedSalary) }}</span>
                 </div>
               </div>
+            </div>
+
+            <div class="detail-section">
+              <h3>自我介绍</h3>
+              <p class="introduction-text">
+                {{ profile.selfIntroduction || "暂未填写自我介绍" }}
+              </p>
             </div>
           </div>
         </div>
 
-        <!-- 技能与证书 -->
-        <div class="skills-certifications">
-          <div class="section-card">
-            <h3>技能</h3>
-            <div class="skills-list">
-              <el-tag
-                v-for="skill in userInfo.skills"
-                :key="skill"
-                size="medium"
-                class="skill-tag"
-              >
-                {{ skill }}
-              </el-tag>
-              <el-tag
-                v-if="userInfo.skills.length === 0"
-                size="medium"
-                type="info"
-                class="skill-tag"
-              >
-                暂无技能
-              </el-tag>
-            </div>
+        <div class="profile-card">
+          <div class="section-title">
+            <h3>简历预览与导出</h3>
+            <span>编辑后可直接生成简历</span>
           </div>
-
-          <div class="section-card">
-            <h3>证书</h3>
-            <div class="certifications-list">
-              <div
-                v-for="cert in userInfo.certifications"
-                :key="cert.name"
-                class="certification-item"
-              >
-                <h4>{{ cert.name }}</h4>
-                <p>{{ cert.issuer }} - {{ cert.date }}</p>
-              </div>
-              <div v-if="userInfo.certifications.length === 0" class="empty-certifications">
-                <p>暂无证书</p>
-              </div>
-            </div>
-          </div>
+          <ResumeGenerator :student-info="profile" />
         </div>
       </div>
     </main>
+
+    <el-dialog
+      v-model="editDialogVisible"
+      title="编辑简历"
+      width="720px"
+      destroy-on-close
+    >
+      <el-form :model="editForm" label-width="88px" class="edit-form">
+        <div class="form-section">
+          <h4>基本信息</h4>
+          <el-row :gutter="16">
+            <el-col :span="12">
+              <el-form-item label="姓名">
+                <el-input v-model="editForm.name" placeholder="请输入姓名" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="学号" required>
+                <el-input v-model="editForm.studentId" placeholder="请输入学号" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="邮箱">
+                <el-input v-model="editForm.email" placeholder="请输入邮箱" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="电话">
+                <el-input v-model="editForm.phone" placeholder="请输入电话" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-form-item label="地址">
+            <el-input v-model="editForm.address" placeholder="请输入地址" />
+          </el-form-item>
+        </div>
+
+        <div class="form-section">
+          <h4>教育背景</h4>
+          <el-row :gutter="16">
+            <el-col :span="12">
+              <el-form-item label="学校">
+                <el-input v-model="editForm.school" placeholder="请输入学校" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="专业" required>
+                <el-input v-model="editForm.major" placeholder="请输入专业" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="院系">
+                <el-input
+                  v-model="editForm.department"
+                  placeholder="请输入院系"
+                />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="年级">
+                <el-input v-model="editForm.grade" placeholder="请输入年级" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="学历">
+                <el-select
+                  v-model="editForm.education"
+                  placeholder="请选择学历"
+                  style="width: 100%"
+                >
+                  <el-option label="大专" value="大专" />
+                  <el-option label="本科" value="本科" />
+                  <el-option label="硕士" value="硕士" />
+                  <el-option label="博士" value="博士" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </div>
+
+        <div class="form-section">
+          <h4>求职意向</h4>
+          <el-row :gutter="16">
+            <el-col :span="12">
+              <el-form-item label="职业方向">
+                <el-input
+                  v-model="editForm.careerDirection"
+                  placeholder="如：Java开发工程师"
+                />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="期望薪资">
+                <el-input
+                  v-model="editForm.expectedSalary"
+                  placeholder="如：8k-12k"
+                />
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </div>
+
+        <div class="form-section">
+          <h4>自我介绍</h4>
+          <el-form-item label-width="0">
+            <el-input
+              v-model="editForm.selfIntroduction"
+              type="textarea"
+              :rows="5"
+              placeholder="请输入自我介绍"
+            />
+          </el-form-item>
+        </div>
+      </el-form>
+
+      <template #footer>
+        <el-button @click="editDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="saving" @click="saveResume">
+          保存
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
+import { ElMessage } from "element-plus";
 import Sidebar from "@/components/company/Sidebar.vue";
 import TopNav from "@/components/company/TopNav.vue";
+import ResumeGenerator from "@/components/resume/ResumeGenerator.vue";
 
 const router = useRouter();
 const sidebarCollapsed = ref(false);
-
-// 从本地存储获取用户信息
 const username = ref(localStorage.getItem("username") || "学生");
 const role = ref(localStorage.getItem("role") || "STUDENT");
+const userId = localStorage.getItem("userId");
 
-// 计算用户角色文本
+const loading = ref(false);
+const saving = ref(false);
+const editDialogVisible = ref(false);
+
+const createEmptyProfile = () => ({
+  name: "",
+  username: "",
+  email: "",
+  phone: "",
+  address: "",
+  studentId: "",
+  major: "",
+  department: "",
+  grade: "",
+  education: "",
+  school: "",
+  expectedSalary: "",
+  careerDirection: "",
+  selfIntroduction: "",
+  resumeUrl: "",
+});
+
+const profile = ref(createEmptyProfile());
+const editForm = ref(createEmptyProfile());
+
 const roleText = computed(() => {
-  switch (role.value) {
-    case "ADMIN":
-      return "管理员";
-    case "STUDENT":
-      return "学生";
-    case "COMPANY":
-      return "企业";
-    default:
-      return "用户";
+  if (role.value === "STUDENT") {
+    return "学生简历";
   }
+  return "用户";
 });
 
-// 用户信息
-const userInfo = ref({
-  name: "张三",
-  gender: "男",
-  age: 22,
-  birthDate: "2004-01-01",
-  email: "zhangsan@example.com",
-  phone: "13800138000",
-  address: "北京市海淀区",
-  school: "北京大学",
-  major: "计算机科学与技术",
-  education: "本科",
-  graduationDate: "2026-06",
-  desiredJob: "前端开发工程师",
-  desiredSalary: "15K-20K",
-  desiredLocation: "北京",
-  jobType: "全职",
-  skills: ["Vue.js", "React", "JavaScript", "HTML/CSS", "Node.js"],
-  certifications: [
-    {
-      name: "计算机等级考试二级",
-      issuer: "教育部考试中心",
-      date: "2024-03"
-    },
-    {
-      name: "英语四级",
-      issuer: "教育部考试中心",
-      date: "2023-12"
-    }
-  ]
-});
+const displayValue = (value) => value || "未设置";
 
-// 编辑资料
-const editProfile = () => {
-  console.log("编辑资料");
-  // 这里可以打开编辑资料对话框
+const syncProfile = (data) => {
+  profile.value = {
+    ...createEmptyProfile(),
+    ...data,
+  };
+  username.value = profile.value.name || localStorage.getItem("username") || "学生";
 };
 
-// 切换侧边栏
+const fetchResume = async () => {
+  if (!userId) {
+    ElMessage.error("未获取到当前用户信息，请重新登录");
+    return;
+  }
+
+  loading.value = true;
+  try {
+    const response = await fetch(`/employment/api/students/${userId}/resume`, {
+      credentials: "include",
+    });
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "获取简历信息失败");
+    }
+
+    syncProfile(data);
+  } catch (error) {
+    console.error("获取简历信息失败:", error);
+    ElMessage.error(error.message || "获取简历信息失败");
+  } finally {
+    loading.value = false;
+  }
+};
+
+const openEditDialog = () => {
+  editForm.value = {
+    ...profile.value,
+  };
+  editDialogVisible.value = true;
+};
+
+const saveResume = async () => {
+  if (!editForm.value.studentId || !editForm.value.major) {
+    ElMessage.warning("请至少填写学号和专业");
+    return;
+  }
+
+  saving.value = true;
+  try {
+    const response = await fetch(`/employment/api/students/${userId}/resume`, {
+      method: "PUT",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(editForm.value),
+    });
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "保存简历失败");
+    }
+
+    syncProfile(data);
+    localStorage.setItem("username", data.username || localStorage.getItem("username") || "");
+    editDialogVisible.value = false;
+    ElMessage.success("简历保存成功");
+  } catch (error) {
+    console.error("保存简历失败:", error);
+    ElMessage.error(error.message || "保存简历失败");
+  } finally {
+    saving.value = false;
+  }
+};
+
 const toggleSidebar = () => {
   sidebarCollapsed.value = !sidebarCollapsed.value;
 };
 
-// 退出登录
 const logout = () => {
   localStorage.clear();
   router.push("/login");
 };
 
 onMounted(() => {
-  // 页面加载时的初始化逻辑
-  console.log("Student Profile mounted");
+  fetchResume();
 });
 </script>
 
 <style scoped>
-/* 全局样式 */
 .student-profile-container {
   display: flex;
   min-height: 100vh;
@@ -267,7 +387,6 @@ onMounted(() => {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* 主内容区样式 */
 .main-content {
   flex: 1;
   display: flex;
@@ -277,54 +396,56 @@ onMounted(() => {
   box-shadow: -2px 0 10px rgba(0, 0, 0, 0.05);
 }
 
-/* 页面内容 */
 .page-content {
   flex: 1;
   overflow-y: auto;
-  padding: 30px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-/* 个人信息卡片 */
 .profile-card {
-  background: white;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-  padding: 30px;
-  margin-bottom: 30px;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  padding: 24px;
 }
 
 .profile-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
+  gap: 16px;
+  margin-bottom: 24px;
   padding-bottom: 20px;
   border-bottom: 1px solid #e9ecef;
 }
 
 .profile-avatar {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 16px;
 }
 
 .avatar {
   background: linear-gradient(135deg, #3498db, #2980b9);
-  font-size: 40px;
+  color: #fff;
+  font-size: 28px;
+  font-weight: 600;
 }
 
 .profile-name {
+  margin: 0 0 6px;
   font-size: 24px;
-  font-weight: 600;
   color: #333;
-  margin: 0;
 }
 
 .profile-role {
-  font-size: 14px;
-  color: #666;
   margin: 0;
+  color: #666;
+  font-size: 14px;
 }
 
 .profile-actions {
@@ -332,157 +453,98 @@ onMounted(() => {
   gap: 12px;
 }
 
-/* 个人信息详情 */
 .profile-details {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
 }
 
 .detail-section {
-  border: 1px solid #e9ecef;
-  border-radius: 8px;
+  border: 1px solid #edf0f2;
+  border-radius: 10px;
   padding: 20px;
-  background: #f9f9f9;
+  background: #fafbfc;
 }
 
-.detail-section h3 {
-  font-size: 16px;
-  font-weight: 600;
+.detail-section h3,
+.section-title h3,
+.form-section h4 {
+  margin: 0 0 16px;
   color: #333;
-  margin: 0 0 16px 0;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #e9ecef;
 }
 
 .detail-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 16px;
 }
 
 .detail-item {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.detail-item.full-width {
+  grid-column: 1 / -1;
 }
 
 .detail-label {
-  font-size: 14px;
+  font-size: 13px;
   color: #666;
-  font-weight: 500;
-  min-width: 80px;
 }
 
 .detail-value {
   font-size: 14px;
-  color: #333;
-  flex: 1;
+  color: #222;
+  word-break: break-word;
 }
 
-/* 技能与证书 */
-.skills-certifications {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 20px;
-}
-
-.section-card {
-  background: white;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-  padding: 20px;
-}
-
-.section-card h3 {
-  font-size: 16px;
-  font-weight: 600;
-  color: #333;
-  margin: 0 0 16px 0;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #e9ecef;
-}
-
-.skills-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.skill-tag {
-  margin-bottom: 8px;
-}
-
-.certifications-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.certification-item {
-  padding: 12px;
-  background: #f9f9f9;
-  border-radius: 6px;
-  border-left: 3px solid #3498db;
-}
-
-.certification-item h4 {
-  font-size: 14px;
-  font-weight: 600;
-  color: #333;
-  margin: 0 0 4px 0;
-}
-
-.certification-item p {
-  font-size: 12px;
-  color: #666;
+.introduction-text {
   margin: 0;
+  white-space: pre-wrap;
+  line-height: 1.7;
+  color: #333;
 }
 
-.empty-certifications {
-  padding: 20px;
-  text-align: center;
-  color: #999;
-  background: #f9f9f9;
-  border-radius: 6px;
+.section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
 }
 
-/* 响应式设计 */
-@media (max-width: 1200px) {
-  .page-content {
-    padding: 20px;
-  }
+.section-title span {
+  color: #666;
+  font-size: 13px;
+}
 
-  .profile-header {
-    flex-direction: column;
-    gap: 20px;
-    text-align: center;
-  }
-
-  .detail-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .skills-certifications {
-    grid-template-columns: 1fr;
-  }
+.form-section + .form-section {
+  margin-top: 8px;
 }
 
 @media (max-width: 768px) {
-  .main-content {
-    width: 100%;
-  }
-
   .page-content {
     padding: 16px;
   }
 
   .profile-card {
-    padding: 20px;
+    padding: 18px;
   }
 
-  .detail-section {
-    padding: 16px;
+  .profile-header,
+  .section-title {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .profile-avatar {
+    align-items: flex-start;
+  }
+
+  .profile-actions {
+    width: 100%;
   }
 }
 </style>

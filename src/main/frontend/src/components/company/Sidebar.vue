@@ -72,6 +72,12 @@
         </template>
         <span>我的申请</span>
       </el-menu-item>
+      <el-menu-item index="/student/profile">
+        <template #icon>
+          <el-icon><i-ep-user /></el-icon>
+        </template>
+        <span>我的简历</span>
+      </el-menu-item>
     </template>
 
     <!-- 退出登录 -->

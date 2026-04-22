@@ -60,6 +60,12 @@ const router = createRouter({
       meta: { requiresAuth: true, requiresStudent: true },
     },
     {
+      path: "/student/profile",
+      name: "StudentProfile",
+      component: () => import("../views/student/StudentProfile.vue"),
+      meta: { requiresAuth: true, requiresStudent: true },
+    },
+    {
       path: "/company/jobs",
       name: "CompanyJobs",
       component: () => import("../views/company/CompanyJobs.vue"),
