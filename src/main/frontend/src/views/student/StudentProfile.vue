@@ -38,23 +38,33 @@
               <div class="detail-grid">
                 <div class="detail-item">
                   <span class="detail-label">姓名</span>
-                  <span class="detail-value">{{ displayValue(profile.name) }}</span>
+                  <span class="detail-value">{{
+                    displayValue(profile.name)
+                  }}</span>
                 </div>
                 <div class="detail-item">
                   <span class="detail-label">学号</span>
-                  <span class="detail-value">{{ displayValue(profile.studentId) }}</span>
+                  <span class="detail-value">{{
+                    displayValue(profile.studentId)
+                  }}</span>
                 </div>
                 <div class="detail-item">
                   <span class="detail-label">邮箱</span>
-                  <span class="detail-value">{{ displayValue(profile.email) }}</span>
+                  <span class="detail-value">{{
+                    displayValue(profile.email)
+                  }}</span>
                 </div>
                 <div class="detail-item">
                   <span class="detail-label">电话</span>
-                  <span class="detail-value">{{ displayValue(profile.phone) }}</span>
+                  <span class="detail-value">{{
+                    displayValue(profile.phone)
+                  }}</span>
                 </div>
                 <div class="detail-item full-width">
                   <span class="detail-label">地址</span>
-                  <span class="detail-value">{{ displayValue(profile.address) }}</span>
+                  <span class="detail-value">{{
+                    displayValue(profile.address)
+                  }}</span>
                 </div>
               </div>
             </div>
@@ -64,23 +74,33 @@
               <div class="detail-grid">
                 <div class="detail-item">
                   <span class="detail-label">学校</span>
-                  <span class="detail-value">{{ displayValue(profile.school) }}</span>
+                  <span class="detail-value">{{
+                    displayValue(profile.school)
+                  }}</span>
                 </div>
                 <div class="detail-item">
                   <span class="detail-label">专业</span>
-                  <span class="detail-value">{{ displayValue(profile.major) }}</span>
+                  <span class="detail-value">{{
+                    displayValue(profile.major)
+                  }}</span>
                 </div>
                 <div class="detail-item">
                   <span class="detail-label">院系</span>
-                  <span class="detail-value">{{ displayValue(profile.department) }}</span>
+                  <span class="detail-value">{{
+                    displayValue(profile.department)
+                  }}</span>
                 </div>
                 <div class="detail-item">
                   <span class="detail-label">年级</span>
-                  <span class="detail-value">{{ displayValue(profile.grade) }}</span>
+                  <span class="detail-value">{{
+                    displayValue(profile.grade)
+                  }}</span>
                 </div>
                 <div class="detail-item">
                   <span class="detail-label">学历</span>
-                  <span class="detail-value">{{ displayValue(profile.education) }}</span>
+                  <span class="detail-value">{{
+                    displayValue(profile.education)
+                  }}</span>
                 </div>
               </div>
             </div>
@@ -90,11 +110,15 @@
               <div class="detail-grid">
                 <div class="detail-item">
                   <span class="detail-label">职业方向</span>
-                  <span class="detail-value">{{ displayValue(profile.careerDirection) }}</span>
+                  <span class="detail-value">{{
+                    displayValue(profile.careerDirection)
+                  }}</span>
                 </div>
                 <div class="detail-item">
                   <span class="detail-label">期望薪资</span>
-                  <span class="detail-value">{{ displayValue(profile.expectedSalary) }}</span>
+                  <span class="detail-value">{{
+                    displayValue(profile.expectedSalary)
+                  }}</span>
                 </div>
               </div>
             </div>
@@ -104,6 +128,40 @@
               <p class="introduction-text">
                 {{ profile.selfIntroduction || "暂未填写自我介绍" }}
               </p>
+            </div>
+
+            <div
+              class="detail-section"
+              v-if="
+                profile.workExperiences && profile.workExperiences.length > 0
+              "
+            >
+              <h3>工作经历</h3>
+              <div class="work-experience-list">
+                <div
+                  v-for="(exp, index) in profile.workExperiences"
+                  :key="exp.id || index"
+                  class="work-experience-item"
+                >
+                  <div class="exp-header">
+                    <span class="exp-company">{{ exp.companyName }}</span>
+                    <span class="exp-period">
+                      {{ exp.startDate }} ~
+                      {{ exp.currentJob ? "至今" : exp.endDate || "至今" }}
+                    </span>
+                  </div>
+                  <div class="exp-position">
+                    {{ exp.position
+                    }}<span v-if="exp.department"> | {{ exp.department }}</span>
+                  </div>
+                  <p class="exp-description" v-if="exp.description">
+                    {{ exp.description }}
+                  </p>
+                  <p class="exp-achievements" v-if="exp.achievements">
+                    <strong>主要业绩：</strong>{{ exp.achievements }}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -135,7 +193,10 @@
             </el-col>
             <el-col :span="12">
               <el-form-item label="学号" required>
-                <el-input v-model="editForm.studentId" placeholder="请输入学号" />
+                <el-input
+                  v-model="editForm.studentId"
+                  placeholder="请输入学号"
+                />
               </el-form-item>
             </el-col>
             <el-col :span="12">
@@ -230,6 +291,100 @@
             />
           </el-form-item>
         </div>
+
+        <div class="form-section">
+          <div class="section-header">
+            <h4>工作经历</h4>
+            <el-button type="primary" size="small" @click="addWorkExperience">
+              + 添加经历
+            </el-button>
+          </div>
+          <div
+            v-for="(exp, index) in editForm.workExperiences"
+            :key="index"
+            class="work-experience-form-item"
+          >
+            <div class="exp-form-header">
+              <span>经历 {{ index + 1 }}</span>
+              <el-button
+                type="danger"
+                size="small"
+                text
+                @click="removeWorkExperience(index)"
+              >
+                删除
+              </el-button>
+            </div>
+            <el-row :gutter="16">
+              <el-col :span="12">
+                <el-form-item label="公司名称" required>
+                  <el-input
+                    v-model="exp.companyName"
+                    placeholder="请输入公司名称"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="职位" required>
+                  <el-input v-model="exp.position" placeholder="请输入职位" />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="部门">
+                  <el-input v-model="exp.department" placeholder="请输入部门" />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="入职时间" required>
+                  <el-date-picker
+                    v-model="exp.startDate"
+                    type="month"
+                    placeholder="选择月份"
+                    format="YYYY-MM"
+                    value-format="YYYY-MM"
+                    style="width: 100%"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="离职时间">
+                  <el-date-picker
+                    v-model="exp.endDate"
+                    type="month"
+                    placeholder="选择月份"
+                    format="YYYY-MM"
+                    value-format="YYYY-MM"
+                    style="width: 100%"
+                    :disabled="exp.currentJob"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="至今">
+                  <el-checkbox v-model="exp.currentJob"
+                    >目前仍在此公司</el-checkbox
+                  >
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-form-item label="工作描述">
+              <el-input
+                v-model="exp.description"
+                type="textarea"
+                :rows="3"
+                placeholder="描述你的工作职责和内容"
+              />
+            </el-form-item>
+            <el-form-item label="主要业绩">
+              <el-input
+                v-model="exp.achievements"
+                type="textarea"
+                :rows="3"
+                placeholder="描述你的工作成果和业绩"
+              />
+            </el-form-item>
+          </div>
+        </div>
       </el-form>
 
       <template #footer>
@@ -276,6 +431,7 @@ const createEmptyProfile = () => ({
   careerDirection: "",
   selfIntroduction: "",
   resumeUrl: "",
+  workExperiences: [],
 });
 
 const profile = ref(createEmptyProfile());
@@ -295,7 +451,8 @@ const syncProfile = (data) => {
     ...createEmptyProfile(),
     ...data,
   };
-  username.value = profile.value.name || localStorage.getItem("username") || "学生";
+  username.value =
+    profile.value.name || localStorage.getItem("username") || "学生";
 };
 
 const fetchResume = async () => {
@@ -327,8 +484,29 @@ const fetchResume = async () => {
 const openEditDialog = () => {
   editForm.value = {
     ...profile.value,
+    workExperiences: profile.value.workExperiences
+      ? profile.value.workExperiences.map((exp) => ({ ...exp }))
+      : [],
   };
   editDialogVisible.value = true;
+};
+
+const addWorkExperience = () => {
+  editForm.value.workExperiences.push({
+    id: null,
+    companyName: "",
+    position: "",
+    department: "",
+    startDate: "",
+    endDate: "",
+    currentJob: false,
+    description: "",
+    achievements: "",
+  });
+};
+
+const removeWorkExperience = (index) => {
+  editForm.value.workExperiences.splice(index, 1);
 };
 
 const saveResume = async () => {
@@ -354,7 +532,10 @@ const saveResume = async () => {
     }
 
     syncProfile(data);
-    localStorage.setItem("username", data.username || localStorage.getItem("username") || "");
+    localStorage.setItem(
+      "username",
+      data.username || localStorage.getItem("username") || "",
+    );
     editDialogVisible.value = false;
     ElMessage.success("简历保存成功");
   } catch (error) {
@@ -522,6 +703,90 @@ onMounted(() => {
 
 .form-section + .form-section {
   margin-top: 8px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.section-header h4 {
+  margin: 0;
+}
+
+.work-experience-form-item {
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  background: #fafbfc;
+}
+
+.exp-form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  font-weight: 600;
+  color: #333;
+}
+
+.work-experience-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.work-experience-item {
+  border-left: 3px solid #3498db;
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border-radius: 0 8px 8px 0;
+}
+
+.exp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.exp-company {
+  font-weight: 600;
+  font-size: 15px;
+  color: #333;
+}
+
+.exp-period {
+  font-size: 13px;
+  color: #666;
+}
+
+.exp-position {
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 8px;
+}
+
+.exp-description {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: #666;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.exp-achievements {
+  margin: 0;
+  font-size: 13px;
+  color: #666;
+  line-height: 1.6;
+}
+
+.exp-achievements strong {
+  color: #333;
 }
 
 @media (max-width: 768px) {

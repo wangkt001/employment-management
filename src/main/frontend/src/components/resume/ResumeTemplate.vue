@@ -36,6 +36,36 @@
       <p>{{ school || "待补充学校信息" }} / {{ major || "待补充专业信息" }}</p>
       <p>{{ education || "待补充学历信息" }}</p>
     </div>
+
+    <div
+      class="resume-section"
+      v-if="workExperiences && workExperiences.length > 0"
+    >
+      <h2>工作经历</h2>
+      <div
+        v-for="(exp, index) in workExperiences"
+        :key="exp.id || index"
+        class="work-experience-item"
+      >
+        <div class="exp-header">
+          <span class="exp-company">{{ exp.companyName }}</span>
+          <span class="exp-period">
+            {{ exp.startDate }} ~
+            {{ exp.currentJob ? "至今" : exp.endDate || "至今" }}
+          </span>
+        </div>
+        <div class="exp-position">
+          {{ exp.position
+          }}<span v-if="exp.department"> | {{ exp.department }}</span>
+        </div>
+        <p class="exp-description" v-if="exp.description">
+          {{ exp.description }}
+        </p>
+        <p class="exp-achievements" v-if="exp.achievements">
+          <strong>主要业绩：</strong>{{ exp.achievements }}
+        </p>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -80,6 +110,10 @@ defineProps({
   selfIntroduction: {
     type: String,
     default: "",
+  },
+  workExperiences: {
+    type: Array,
+    default: () => [],
   },
 });
 </script>
@@ -150,6 +184,61 @@ defineProps({
   margin-bottom: 6px;
   color: #666;
   font-size: 12px;
+}
+
+.work-experience-item {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px dashed #ddd;
+}
+
+.work-experience-item:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.exp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.exp-company {
+  font-weight: 600;
+  font-size: 15px;
+  color: #333;
+}
+
+.exp-period {
+  font-size: 13px;
+  color: #666;
+}
+
+.exp-position {
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 6px;
+}
+
+.exp-description {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: #666;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.exp-achievements {
+  margin: 0;
+  font-size: 13px;
+  color: #666;
+  line-height: 1.6;
+}
+
+.exp-achievements strong {
+  color: #333;
 }
 
 @media print {

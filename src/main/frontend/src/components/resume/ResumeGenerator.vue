@@ -19,6 +19,7 @@
           :careerDirection="studentInfo.careerDirection"
           :expectedSalary="studentInfo.expectedSalary"
           :selfIntroduction="studentInfo.selfIntroduction"
+          :workExperiences="studentInfo.workExperiences || []"
         />
       </div>
       <el-button type="success" @click="downloadResume"> 下载简历 </el-button>
