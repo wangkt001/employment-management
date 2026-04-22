@@ -17,7 +17,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/company/jobs")
@@ -108,36 +110,40 @@ public class CompanyJobApiController {
 
     // 创建新岗位
     @PostMapping
-    public Job createJob(@RequestBody JobRequest jobRequest) {
+    public Map<String, Object> createJob(@RequestBody JobRequest jobRequest) {
+        Map<String, Object> result = new HashMap<>();
         System.out.println("开始创建岗位...");
         System.out.println("请求参数: " + jobRequest.toString());
         try {
-            // 1. 根据userId获取用户
-            System.out.println("步骤1: 根据userId获取用户");
             if (jobRequest.getUserId() == null) {
                 System.out.println("userId为null");
-                throw new RuntimeException("用户ID不能为空");
+                result.put("success", false);
+                result.put("message", "用户ID不能为空");
+                return result;
             }
             User user = userRepository.findById(jobRequest.getUserId())
-                    .orElseThrow(() -> new RuntimeException("用户不存在"));
+                    .orElse(null);
+            if (user == null) {
+                System.out.println("用户不存在, userId=" + jobRequest.getUserId());
+                result.put("success", false);
+                result.put("message", "用户不存在");
+                return result;
+            }
             System.out.println("找到用户，ID: " + user.getId() + "，名称: " + user.getName());
 
-            // 2. 根据companyId获取公司
-            System.out.println("步骤2: 根据companyId获取公司");
-            if (jobRequest.getCompanyId() == null) {
-                System.out.println("companyId为null");
-                throw new RuntimeException("公司ID不能为空");
+            Company company = companyRepository.findByUserId(user.getId());
+            if (company == null) {
+                System.out.println("企业不存在, userId=" + user.getId());
+                result.put("success", false);
+                result.put("message", "企业不存在，请先完善企业信息");
+                return result;
             }
-            Company company = companyRepository.findById(jobRequest.getCompanyId())
-                    .orElseThrow(() -> new RuntimeException("企业不存在"));
             System.out.println("找到公司，ID: " + company.getId() + "，名称: " + company.getCompanyName());
 
-            // 3. 创建岗位
-            System.out.println("步骤3: 创建岗位");
             Job job = new Job();
             job.setCompany(company);
             job.setTitle(jobRequest.getTitle());
-            job.setPosition(jobRequest.getTitle()); // 使用title作为position
+            job.setPosition(jobRequest.getTitle());
             job.setSalaryRange(jobRequest.getSalary());
             job.setWorkingLocation(jobRequest.getLocation());
             job.setWorkExperience(jobRequest.getExperience());
@@ -152,11 +158,16 @@ public class CompanyJobApiController {
             System.out.println("准备保存岗位");
             Job savedJob = jobRepository.save(job);
             System.out.println("岗位创建成功，ID: " + savedJob.getId());
-            return savedJob;
+            result.put("success", true);
+            result.put("data", savedJob);
+            result.put("message", "岗位创建成功");
+            return result;
         } catch (Exception e) {
-            System.out.println("错误信息: " + e.getMessage());
+            System.out.println("创建岗位错误: " + e.getMessage());
             e.printStackTrace();
-            throw e;
+            result.put("success", false);
+            result.put("message", "创建岗位失败: " + e.getMessage());
+            return result;
         }
     }
 

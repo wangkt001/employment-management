@@ -26,7 +26,7 @@
             <el-button
               type="primary"
               size="default"
-              @click="showAddJobModal = true"
+              @click="openJobModal"
               class="add-job-btn"
             >
               <template #icon>
@@ -85,7 +85,7 @@
             :error="error"
             :is-empty="!isLoading && !error && filteredJobs.length === 0"
             @retry="fetchJobs"
-            @add-job="showAddJobModal = true"
+            @add-job="openJobModal"
           />
 
           <!-- 岗位表格 -->
@@ -202,6 +202,7 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
+import { ElMessage } from "element-plus";
 import Sidebar from "@/components/company/Sidebar.vue";
 import TopNav from "@/components/company/TopNav.vue";
 import JobModal from "@/components/company/JobModal.vue";
@@ -210,11 +211,11 @@ import StatusStates from "@/components/company/StatusStates.vue";
 const router = useRouter();
 const sidebarCollapsed = ref(false);
 
-// 从本地存储获取用户信息
+const userId = ref(parseInt(localStorage.getItem("userId")) || null);
 const username = ref(localStorage.getItem("username") || "企业");
 const role = ref(localStorage.getItem("role") || "COMPANY");
 
-// 页面状态
+const hasCompany = ref(false);
 const activeTab = ref("all");
 const currentPage = ref(1);
 const pageSize = ref(10);
@@ -239,40 +240,43 @@ const fetchJobs = async () => {
   try {
     // 从本地缓存获取companyId，并确保是数字类型
     const companyId = parseInt(localStorage.getItem("companyId")) || 4;
-    
+
     // 构建查询参数
     let params = new URLSearchParams();
     params.append("companyId", companyId);
-    
+
     // 添加搜索关键词
     if (searchKeyword.value) {
       params.append("title", searchKeyword.value);
     }
-    
+
     // 添加地区筛选
     if (locationFilter.value !== "all") {
       params.append("location", locationFilter.value);
     }
-    
+
     // 添加状态筛选
     if (activeTab.value === "active") {
       params.append("active", "true");
     } else if (activeTab.value === "inactive") {
       params.append("active", "false");
     }
-    
+
     // 添加分页参数
     params.append("page", currentPage.value - 1); // 后端从0开始
     params.append("size", pageSize.value);
-    
-    const response = await fetch(`/employment/api/company/jobs/page?${params.toString()}`, {
-      credentials: "include",
-    });
-    
+
+    const response = await fetch(
+      `/employment/api/company/jobs/page?${params.toString()}`,
+      {
+        credentials: "include",
+      },
+    );
+
     if (response.ok) {
       const data = await response.json();
       console.log("分页查询结果:", data);
-      
+
       // 转换后端数据格式以匹配前端需求
       jobs.value = data.content.map((job) => ({
         id: job.id,
@@ -292,7 +296,7 @@ const fetchJobs = async () => {
           : new Date().toISOString().split("T")[0],
         status: job.active ? "active" : "inactive",
       }));
-      
+
       // 更新总岗位数
       totalJobs.value = data.totalElements;
     } else {
@@ -339,11 +343,14 @@ const deleteJob = async (jobId) => {
       // 从本地缓存获取userId和companyId
       const userId = parseInt(localStorage.getItem("userId")) || 2;
       const companyId = parseInt(localStorage.getItem("companyId")) || 4;
-      
-      const response = await fetch(`/employment/api/company/jobs/${jobId}?userId=${userId}&companyId=${companyId}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
+
+      const response = await fetch(
+        `/employment/api/company/jobs/${jobId}?userId=${userId}&companyId=${companyId}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        },
+      );
       if (response.ok) {
         // 从本地数据中移除
         jobs.value = jobs.value.filter((job) => job.id !== jobId);
@@ -364,7 +371,7 @@ const toggleJobStatus = async (jobId, newStatus) => {
     // 从本地缓存获取userId和companyId
     const userId = parseInt(localStorage.getItem("userId")) || 2;
     const companyId = parseInt(localStorage.getItem("companyId")) || 4;
-    
+
     const response = await fetch(
       `/employment/api/company/jobs/${jobId}/status?active=${newStatus === "active"}&userId=${userId}&companyId=${companyId}`,
       {
@@ -414,17 +421,18 @@ const submitJob = async (formData) => {
 
     let response;
     if (showEditJobModal.value) {
-      // 编辑现有岗位
-      response = await fetch(`/employment/api/company/jobs/${editingJobId.value}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
+      response = await fetch(
+        `/employment/api/company/jobs/${editingJobId.value}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(jobData),
+          credentials: "include",
         },
-        body: JSON.stringify(jobData),
-        credentials: "include",
-      });
+      );
     } else {
-      // 创建新岗位
       response = await fetch("/employment/api/company/jobs", {
         method: "POST",
         headers: {
@@ -435,17 +443,20 @@ const submitJob = async (formData) => {
       });
     }
 
-    if (response.ok) {
-      // 重新获取岗位列表
+    const data = await response.json();
+
+    if (response.ok && data.success) {
       await fetchJobs();
       closeJobModal();
-      alert(showEditJobModal.value ? "岗位修改成功！" : "岗位发布成功！");
+      ElMessage.success(
+        showEditJobModal.value ? "岗位修改成功！" : "岗位发布成功！",
+      );
     } else {
-      alert("操作失败，请稍后重试");
+      ElMessage.error(data.message || "操作失败，请稍后重试");
     }
   } catch (err) {
     console.error("提交岗位失败:", err);
-    alert("网络错误，请稍后重试");
+    ElMessage.error("网络错误，请稍后重试");
   }
 };
 
@@ -476,14 +487,42 @@ const handleCurrentChange = (page) => {
 
 // 地区筛选处理
 const handleLocationFilter = () => {
-  currentPage.value = 1; // 重置到第一页
-  fetchJobs(); // 重新获取数据
+  currentPage.value = 1;
+  fetchJobs();
 };
 
-onMounted(() => {
-  // 页面加载时获取岗位数据
+const checkCompanyStatus = async () => {
+  if (!userId.value) return;
+  try {
+    const response = await fetch(
+      `/employment/api/company/info?userId=${userId.value}`,
+      { credentials: "include" },
+    );
+    const data = await response.json();
+    if (data.success && data.hasCompany) {
+      hasCompany.value = true;
+      localStorage.setItem("companyId", data.id);
+    } else {
+      hasCompany.value = false;
+      localStorage.removeItem("companyId");
+    }
+  } catch (err) {
+    console.error("检查企业状态失败:", err);
+  }
+};
+
+const openJobModal = () => {
+  if (!hasCompany.value) {
+    ElMessage.warning("请先完善企业信息后再发布岗位");
+    router.push("/company/profile");
+    return;
+  }
+  showAddJobModal.value = true;
+};
+
+onMounted(async () => {
+  await checkCompanyStatus();
   fetchJobs();
-  console.log("Company Jobs mounted");
 });
 </script>
 

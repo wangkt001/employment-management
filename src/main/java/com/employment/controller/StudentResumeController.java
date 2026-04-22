@@ -13,6 +13,8 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -74,6 +76,8 @@ public class StudentResumeController {
         Student student = studentRepository.findByUserId(userId);
         if (student == null) {
             student = new Student();
+            student.setUser(user);
+        } else if (student.getUser() == null) {
             student.setUser(user);
         }
 
@@ -146,11 +150,11 @@ public class StudentResumeController {
             experience.setCompanyName(companyName);
             experience.setPosition(position);
             experience.setDepartment(normalize(expData.get("department")));
-            experience.setStartDate(LocalDate.parse(startDateStr));
+            experience.setStartDate(parseDate(startDateStr));
 
             String endDateStr = normalize(expData.get("endDate"));
             if (StringUtils.hasText(endDateStr)) {
-                experience.setEndDate(LocalDate.parse(endDateStr));
+                experience.setEndDate(parseDate(endDateStr));
             } else {
                 experience.setEndDate(null);
             }
@@ -229,5 +233,19 @@ public class StudentResumeController {
 
         String text = value.toString().trim();
         return text.isEmpty() ? null : text;
+    }
+
+    private LocalDate parseDate(String dateStr) {
+        if (!StringUtils.hasText(dateStr)) {
+            return null;
+        }
+        try {
+            if (dateStr.length() == 7 && dateStr.contains("-")) {
+                return LocalDate.parse(dateStr + "-01");
+            }
+            return LocalDate.parse(dateStr);
+        } catch (DateTimeParseException e) {
+            return null;
+        }
     }
 }

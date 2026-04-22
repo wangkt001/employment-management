@@ -4,16 +4,20 @@ import com.employment.entity.Application;
 import com.employment.entity.Job;
 import com.employment.entity.Student;
 import com.employment.entity.User;
+import com.employment.entity.WorkExperience;
 import com.employment.repository.ApplicationRepository;
 import com.employment.repository.JobRepository;
 import com.employment.repository.StudentRepository;
 import com.employment.repository.UserRepository;
+import com.employment.repository.WorkExperienceRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/applications")
@@ -33,6 +37,9 @@ public class StudentApplicationApiController {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private WorkExperienceRepository workExperienceRepository;
 
     // 申请岗位
     @PostMapping("/job/{jobId}")
@@ -192,6 +199,56 @@ public class StudentApplicationApiController {
             errorApplication.setStatus("ERROR");
             errorApplication.setApplyDate(new Date());
             return errorApplication;
+        }
+    }
+
+    // 取消申请
+    @DeleteMapping("/{applicationId}")
+    public Map<String, Object> cancelApplication(@PathVariable Long applicationId, @RequestParam Long userId) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            User user = userRepository.findById(userId).orElse(null);
+            if (user == null) {
+                result.put("success", false);
+                result.put("message", "用户不存在");
+                return result;
+            }
+
+            Student student = studentRepository.findByUser(user);
+            if (student == null) {
+                result.put("success", false);
+                result.put("message", "学生记录不存在");
+                return result;
+            }
+
+            Application application = applicationRepository.findById(applicationId).orElse(null);
+            if (application == null) {
+                result.put("success", false);
+                result.put("message", "申请记录不存在");
+                return result;
+            }
+
+            if (!application.getStudent().getId().equals(student.getId())) {
+                result.put("success", false);
+                result.put("message", "无权操作此申请");
+                return result;
+            }
+
+            if (!"pending".equalsIgnoreCase(application.getStatus())) {
+                result.put("success", false);
+                result.put("message", "只有待处理状态的申请才能取消");
+                return result;
+            }
+
+            applicationRepository.delete(application);
+            result.put("success", true);
+            result.put("message", "取消申请成功");
+            return result;
+        } catch (Exception e) {
+            e.printStackTrace();
+            result.put("success", false);
+            result.put("message", "取消申请失败: " + e.getMessage());
+            return result;
         }
     }
 

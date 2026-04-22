@@ -199,6 +199,7 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
+import { ElMessage } from "element-plus";
 import Sidebar from "@/components/company/Sidebar.vue";
 import TopNav from "@/components/company/TopNav.vue";
 import StatusStates from "@/components/company/StatusStates.vue";
@@ -359,17 +360,25 @@ const closeApplicationDetail = () => {
 const cancelApplication = async (applicationId) => {
   if (confirm("确定要取消这个申请吗？")) {
     try {
-      // 模拟API调用
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      // 从本地数据中移除
-      applications.value = applications.value.filter(
-        (app) => app.id !== applicationId,
+      const response = await fetch(
+        `/employment/api/applications/${applicationId}?userId=${userId.value}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        },
       );
-      alert("申请已取消！");
+      const data = await response.json();
+      if (data.success) {
+        applications.value = applications.value.filter(
+          (app) => app.id !== applicationId,
+        );
+        ElMessage.success("申请已取消");
+      } else {
+        ElMessage.error(data.message || "取消申请失败");
+      }
     } catch (error) {
       console.error("取消申请失败:", error);
-      alert("取消申请失败，请稍后重试");
+      ElMessage.error("网络错误，请稍后重试");
     }
   }
 };

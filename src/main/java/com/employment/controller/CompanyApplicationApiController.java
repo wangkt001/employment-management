@@ -4,14 +4,20 @@ import com.employment.entity.Application;
 import com.employment.entity.Company;
 import com.employment.entity.Job;
 import com.employment.entity.Student;
+import com.employment.entity.User;
+import com.employment.entity.WorkExperience;
 import com.employment.repository.ApplicationRepository;
 import com.employment.repository.CompanyRepository;
 import com.employment.repository.JobRepository;
 import com.employment.repository.StudentRepository;
+import com.employment.repository.WorkExperienceRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -29,6 +35,9 @@ public class CompanyApplicationApiController {
 
     @Autowired
     private StudentRepository studentRepository;
+
+    @Autowired
+    private WorkExperienceRepository workExperienceRepository;
 
     // 获取公司的所有申请
     @GetMapping
@@ -108,6 +117,61 @@ public class CompanyApplicationApiController {
         } catch (Exception e) {
             e.printStackTrace();
             return null;
+        }
+    }
+
+    // 获取申请对应的学生简历详情
+    @GetMapping("/{applicationId}/student-resume")
+    public Map<String, Object> getStudentResume(@PathVariable Long applicationId) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            Application application = applicationRepository.findById(applicationId).orElse(null);
+            if (application == null || application.getStudent() == null) {
+                result.put("success", false);
+                result.put("message", "申请或学生记录不存在");
+                return result;
+            }
+
+            Student student = application.getStudent();
+            User user = student.getUser();
+
+            result.put("success", true);
+            result.put("name", user.getName());
+            result.put("email", user.getEmail());
+            result.put("phone", user.getPhone());
+            result.put("address", user.getAddress());
+            result.put("studentId", student.getStudentId());
+            result.put("major", student.getMajor());
+            result.put("department", student.getDepartment());
+            result.put("grade", student.getGrade());
+            result.put("education", student.getEducation());
+            result.put("school", student.getSchool());
+            result.put("expectedSalary", student.getExpectedSalary());
+            result.put("careerDirection", student.getCareerDirection());
+            result.put("selfIntroduction", student.getSelfIntroduction());
+
+            List<WorkExperience> workExperiences = workExperienceRepository.findByStudentOrderByStartDateDesc(student);
+            List<Map<String, Object>> workExpList = new ArrayList<>();
+            for (WorkExperience exp : workExperiences) {
+                Map<String, Object> expMap = new HashMap<>();
+                expMap.put("id", exp.getId());
+                expMap.put("companyName", exp.getCompanyName());
+                expMap.put("position", exp.getPosition());
+                expMap.put("department", exp.getDepartment());
+                expMap.put("startDate", exp.getStartDate() != null ? exp.getStartDate().toString() : "");
+                expMap.put("endDate", exp.getEndDate() != null ? exp.getEndDate().toString() : "");
+                expMap.put("currentJob", exp.getCurrentJob());
+                expMap.put("description", exp.getDescription());
+                expMap.put("achievements", exp.getAchievements());
+                workExpList.add(expMap);
+            }
+            result.put("workExperiences", workExpList);
+            return result;
+        } catch (Exception e) {
+            e.printStackTrace();
+            result.put("success", false);
+            result.put("message", "获取简历详情失败: " + e.getMessage());
+            return result;
         }
     }
 }

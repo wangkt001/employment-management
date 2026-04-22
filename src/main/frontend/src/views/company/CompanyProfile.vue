@@ -198,51 +198,108 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
+import { ElMessage } from "element-plus";
 import Sidebar from "@/components/company/Sidebar.vue";
 import TopNav from "@/components/company/TopNav.vue";
 
 const router = useRouter();
 const sidebarCollapsed = ref(false);
 
-// 从本地存储获取用户信息
+const userId = ref(parseInt(localStorage.getItem("userId")) || null);
 const username = ref(localStorage.getItem("username") || "企业");
 const role = ref(localStorage.getItem("role") || "COMPANY");
 
-// 编辑状态
 const isEditing = ref(false);
+const isLoading = ref(false);
 
-// 企业表单数据
-const companyForm = ref();
+const companyForm = ref({
+  companyName: "",
+  industry: "",
+  scale: "",
+  businessLicense: "",
+  description: "",
+  isVerified: false,
+});
 
-// 文件上传相关
-const fileList = ref([
-  {
-    name: "营业执照.jpg",
-    url: "#",
-  },
-]);
+const fileList = ref([]);
 
-// 切换侧边栏
 const toggleSidebar = () => {
   sidebarCollapsed.value = !sidebarCollapsed.value;
 };
 
-// 退出登录
 const logout = () => {
   localStorage.clear();
   router.push("/login");
 };
 
-// 保存企业资料
-const saveProfile = () => {
-  // 实际应该调用后端API
-  console.log("保存企业资料:", companyForm.value);
-  // 模拟保存成功
-  alert("企业资料保存成功！");
-  isEditing.value = false;
+const fetchCompanyProfile = async () => {
+  if (!userId.value) return;
+  isLoading.value = true;
+  try {
+    const response = await fetch(
+      `/employment/api/company/info?userId=${userId.value}`,
+      { credentials: "include" },
+    );
+    const data = await response.json();
+    if (data.success) {
+      companyForm.value = {
+        companyName: data.companyName || "",
+        industry: data.industry || "",
+        scale: data.scale || "",
+        businessLicense: data.businessLicense || "",
+        description: data.description || "",
+        isVerified: data.isVerified || false,
+      };
+      localStorage.setItem("companyId", data.id);
+    } else {
+      companyForm.value = {
+        companyName: "",
+        industry: "",
+        scale: "",
+        businessLicense: "",
+        description: "",
+        isVerified: false,
+      };
+    }
+  } catch (err) {
+    console.error("获取企业资料失败:", err);
+  } finally {
+    isLoading.value = false;
+  }
 };
 
-// 文件上传相关方法
+const saveProfile = async () => {
+  if (!companyForm.value.companyName) {
+    ElMessage.warning("企业名称不能为空");
+    return;
+  }
+  try {
+    const hasCompany = localStorage.getItem("companyId");
+    const url = hasCompany
+      ? `/employment/api/company/update?userId=${userId.value}`
+      : `/employment/api/company/create?userId=${userId.value}`;
+    const response = await fetch(url, {
+      method: hasCompany ? "PUT" : "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(companyForm.value),
+    });
+    const data = await response.json();
+    if (data.success) {
+      ElMessage.success(data.message);
+      isEditing.value = false;
+      if (data.id) {
+        localStorage.setItem("companyId", data.id);
+      }
+    } else {
+      ElMessage.error(data.message || "保存失败");
+    }
+  } catch (err) {
+    console.error("保存企业资料失败:", err);
+    ElMessage.error("网络错误，请稍后重试");
+  }
+};
+
 const handlePreview = (file) => {
   console.log("预览文件:", file);
 };
@@ -260,33 +317,11 @@ const beforeRemove = (file) => {
 };
 
 const handleExceed = (files, fileList) => {
-  alert("只能上传一个文件");
-};
-
-// 获取企业资料
-const fetchCompanyProfile = async () => {
-  try {
-    // 实际应该从后端API获取
-    // const response = await fetch("/api/company/profile", {
-    //   credentials: "include",
-    // });
-    // if (response.ok) {
-    //   const data = await response.json();
-    //   companyForm.value = data;
-    // }
-
-    // 模拟数据已经在初始化时设置
-    console.log("获取企业资料成功");
-  } catch (err) {
-    console.error("获取企业资料失败:", err);
-    alert("获取企业资料失败，请稍后重试");
-  }
+  ElMessage.warning("只能上传一个文件");
 };
 
 onMounted(() => {
-  // 页面加载时获取企业资料
   fetchCompanyProfile();
-  console.log("Company Profile mounted");
 });
 </script>
 

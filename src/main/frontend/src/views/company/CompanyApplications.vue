@@ -210,40 +210,101 @@
             </el-descriptions-item>
           </el-descriptions>
           <el-divider />
-          <el-descriptions title="申请人信息" border>
-            <el-descriptions-item label="姓名">{{
-              selectedApplication.applicantName
-            }}</el-descriptions-item>
-            <el-descriptions-item label="专业">{{
-              selectedApplication.major || "未填写"
-            }}</el-descriptions-item>
-            <el-descriptions-item label="学历">{{
-              selectedApplication.education || "未填写"
-            }}</el-descriptions-item>
-            <el-descriptions-item label="毕业院校">{{
-              selectedApplication.school || "未填写"
-            }}</el-descriptions-item>
-            <el-descriptions-item label="联系方式">{{
-              selectedApplication.contact || "未填写"
-            }}</el-descriptions-item>
-            <el-descriptions-item label="自我介绍" span="2">{{
-              selectedApplication.selfIntroduction || "未填写"
-            }}</el-descriptions-item>
-          </el-descriptions>
-          <el-divider />
-          <div class="resume-section">
-            <h3>简历生成</h3>
-            <ResumeGenerator
-              :studentInfo="{
-                name: selectedApplication.applicantName,
-                phone: selectedApplication.contact,
-                email: selectedApplication.email || '未知',
-                education: selectedApplication.education,
-                school: selectedApplication.school,
-                major: selectedApplication.major,
-                selfIntroduction: selectedApplication.selfIntroduction,
-              }"
-            />
+          <div v-loading="resumeLoading">
+            <el-descriptions v-if="studentResume" title="申请人信息" border>
+              <el-descriptions-item label="姓名">{{
+                studentResume.name || "未填写"
+              }}</el-descriptions-item>
+              <el-descriptions-item label="学号">{{
+                studentResume.studentId || "未填写"
+              }}</el-descriptions-item>
+              <el-descriptions-item label="专业">{{
+                studentResume.major || "未填写"
+              }}</el-descriptions-item>
+              <el-descriptions-item label="学历">{{
+                studentResume.education || "未填写"
+              }}</el-descriptions-item>
+              <el-descriptions-item label="院系">{{
+                studentResume.department || "未填写"
+              }}</el-descriptions-item>
+              <el-descriptions-item label="年级">{{
+                studentResume.grade || "未填写"
+              }}</el-descriptions-item>
+              <el-descriptions-item label="毕业院校">{{
+                studentResume.school || "未填写"
+              }}</el-descriptions-item>
+              <el-descriptions-item label="联系方式">{{
+                studentResume.phone || "未填写"
+              }}</el-descriptions-item>
+              <el-descriptions-item label="邮箱">{{
+                studentResume.email || "未填写"
+              }}</el-descriptions-item>
+              <el-descriptions-item label="地址">{{
+                studentResume.address || "未填写"
+              }}</el-descriptions-item>
+              <el-descriptions-item label="职业方向">{{
+                studentResume.careerDirection || "未填写"
+              }}</el-descriptions-item>
+              <el-descriptions-item label="期望薪资">{{
+                studentResume.expectedSalary || "未填写"
+              }}</el-descriptions-item>
+              <el-descriptions-item label="自我介绍" span="2">{{
+                studentResume.selfIntroduction || "未填写"
+              }}</el-descriptions-item>
+            </el-descriptions>
+            <el-divider v-if="studentResume" />
+            <div
+              v-if="
+                studentResume &&
+                studentResume.workExperiences &&
+                studentResume.workExperiences.length > 0
+              "
+              class="work-experience-section"
+            >
+              <h3>工作经历</h3>
+              <div
+                v-for="(exp, index) in studentResume.workExperiences"
+                :key="exp.id || index"
+                class="work-experience-item"
+              >
+                <div class="exp-header">
+                  <span class="exp-company">{{ exp.companyName }}</span>
+                  <span class="exp-period">
+                    {{ exp.startDate }} ~
+                    {{ exp.currentJob ? "至今" : exp.endDate || "至今" }}
+                  </span>
+                </div>
+                <div class="exp-position">
+                  {{ exp.position
+                  }}<span v-if="exp.department"> | {{ exp.department }}</span>
+                </div>
+                <p class="exp-description" v-if="exp.description">
+                  {{ exp.description }}
+                </p>
+                <p class="exp-achievements" v-if="exp.achievements">
+                  <strong>主要业绩：</strong>{{ exp.achievements }}
+                </p>
+              </div>
+            </div>
+            <el-divider v-if="studentResume" />
+            <div v-if="studentResume" class="resume-section">
+              <h3>简历预览</h3>
+              <ResumeGenerator
+                :studentInfo="{
+                  name: studentResume.name,
+                  phone: studentResume.phone,
+                  email: studentResume.email,
+                  address: studentResume.address,
+                  education: studentResume.education,
+                  school: studentResume.school,
+                  major: studentResume.major,
+                  careerDirection: studentResume.careerDirection,
+                  expectedSalary: studentResume.expectedSalary,
+                  selfIntroduction: studentResume.selfIntroduction,
+                  workExperiences: studentResume.workExperiences || [],
+                }"
+              />
+            </div>
           </div>
         </div>
       </el-dialog>
@@ -276,6 +337,8 @@ const statusFilter = ref("all");
 // 模态框状态
 const showDetailModal = ref(false);
 const selectedApplication = ref(null);
+const studentResume = ref(null);
+const resumeLoading = ref(false);
 
 // 申请数据
 const applications = ref([]);
@@ -509,9 +572,27 @@ const generateDocxResume = (application) => {
 };
 
 // 查看申请详情
-const viewApplicationDetails = (application) => {
+const viewApplicationDetails = async (application) => {
   selectedApplication.value = application;
+  studentResume.value = null;
   showDetailModal.value = true;
+  resumeLoading.value = true;
+  try {
+    const response = await fetch(
+      `/employment/api/company/applications/${application.id}/student-resume`,
+      {
+        credentials: "include",
+      },
+    );
+    const data = await response.json();
+    if (data.success) {
+      studentResume.value = data;
+    }
+  } catch (err) {
+    console.error("获取学生简历失败:", err);
+  } finally {
+    resumeLoading.value = false;
+  }
 };
 
 // 关闭详情模态框
@@ -708,6 +789,68 @@ onMounted(() => {
   color: #333;
   font-size: 16px;
   font-weight: 600;
+}
+
+.work-experience-section {
+  margin-top: 16px;
+}
+
+.work-experience-section h3 {
+  margin-bottom: 12px;
+  color: #333;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.work-experience-item {
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border-left: 3px solid #3498db;
+  border-radius: 0 8px 8px 0;
+}
+
+.exp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.exp-company {
+  font-weight: 600;
+  font-size: 14px;
+  color: #333;
+}
+
+.exp-period {
+  font-size: 12px;
+  color: #666;
+}
+
+.exp-position {
+  font-size: 13px;
+  color: #555;
+  margin-bottom: 6px;
+}
+
+.exp-description {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: #666;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.exp-achievements {
+  margin: 0;
+  font-size: 13px;
+  color: #666;
+  line-height: 1.6;
+}
+
+.exp-achievements strong {
+  color: #333;
 }
 
 /* 滚动条样式 */
