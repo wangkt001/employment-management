@@ -59,7 +59,9 @@
             >
               <el-option label="全部" value="all" />
               <el-option label="待处理" value="pending" />
-              <el-option label="已通过" value="approved" />
+              <el-option label="已查看" value="reviewed" />
+              <el-option label="面试中" value="interview" />
+              <el-option label="已录用" value="offer" />
               <el-option label="已拒绝" value="rejected" />
             </el-select>
           </div>
@@ -107,29 +109,56 @@
                 </el-button>
               </template>
             </el-table-column>
-            <el-table-column prop="status" label="状态" width="100">
+            <el-table-column prop="status" label="状态" width="120">
               <template #default="scope">
                 <el-tag :type="getStatusTagType(scope.row.status)" size="small">
                   {{ getStatusText(scope.row.status) }}
                 </el-tag>
               </template>
             </el-table-column>
+            <el-table-column prop="interviewTime" label="面试时间" width="160">
+              <template #default="scope">
+                {{ scope.row.interviewTime || "未安排" }}
+              </template>
+            </el-table-column>
+            <el-table-column
+              prop="interviewResult"
+              label="面试结果"
+              width="120"
+            >
+              <template #default="scope">
+                <el-tag
+                  v-if="scope.row.interviewResult"
+                  :type="getInterviewResultType(scope.row.interviewResult)"
+                  size="small"
+                >
+                  {{ getInterviewResultText(scope.row.interviewResult) }}
+                </el-tag>
+                <span v-else>-</span>
+              </template>
+            </el-table-column>
             <el-table-column prop="appliedDate" label="申请日期" width="150" />
-            <el-table-column label="操作" width="200" fixed="right">
+            <el-table-column label="操作" width="320" fixed="right">
               <template #default="scope">
                 <div class="table-actions">
                   <el-button
-                    v-if="scope.row.status === 'pending'"
+                    v-if="
+                      scope.row.status === 'pending' ||
+                      scope.row.status === 'reviewed'
+                    "
                     size="small"
-                    type="success"
+                    type="warning"
                     plain
-                    @click="approveApplication(scope.row.id)"
+                    @click="openScheduleInterviewModal(scope.row)"
                     class="action-btn"
                   >
-                    通过
+                    安排面试
                   </el-button>
                   <el-button
-                    v-if="scope.row.status === 'pending'"
+                    v-if="
+                      scope.row.status === 'pending' ||
+                      scope.row.status === 'reviewed'
+                    "
                     size="small"
                     type="danger"
                     plain
@@ -137,6 +166,26 @@
                     class="action-btn"
                   >
                     拒绝
+                  </el-button>
+                  <el-button
+                    v-if="scope.row.status === 'interview'"
+                    size="small"
+                    type="success"
+                    plain
+                    @click="openInterviewResultModal(scope.row, 'PASS')"
+                    class="action-btn"
+                  >
+                    通过面试
+                  </el-button>
+                  <el-button
+                    v-if="scope.row.status === 'interview'"
+                    size="small"
+                    type="danger"
+                    plain
+                    @click="openInterviewResultModal(scope.row, 'FAIL')"
+                    class="action-btn"
+                  >
+                    面试未通过
                   </el-button>
                   <el-button
                     size="small"
@@ -308,6 +357,66 @@
           </div>
         </div>
       </el-dialog>
+
+      <!-- 安排面试模态框 -->
+      <el-dialog v-model="showInterviewModal" title="安排面试" width="500px">
+        <el-form :model="interviewForm" label-position="top">
+          <el-form-item label="面试时间" required>
+            <el-date-picker
+              v-model="interviewForm.interviewTime"
+              type="datetime"
+              placeholder="选择面试时间"
+              format="YYYY-MM-DD HH:mm"
+              value-format="YYYY-MM-DD HH:mm"
+              style="width: 100%"
+            />
+          </el-form-item>
+          <el-form-item label="面试地点" required>
+            <el-input
+              v-model="interviewForm.interviewLocation"
+              placeholder="请输入面试地点"
+            />
+          </el-form-item>
+          <el-form-item label="面试备注">
+            <el-input
+              v-model="interviewForm.interviewFeedback"
+              type="textarea"
+              :rows="3"
+              placeholder="请输入面试备注（可选）"
+            />
+          </el-form-item>
+        </el-form>
+        <template #footer>
+          <el-button @click="showInterviewModal = false">取消</el-button>
+          <el-button type="primary" @click="submitScheduleInterview"
+            >确定</el-button
+          >
+        </template>
+      </el-dialog>
+
+      <!-- 面试结果模态框 -->
+      <el-dialog
+        v-model="showInterviewResultModal"
+        :title="interviewResultType === 'PASS' ? '通过面试' : '面试未通过'"
+        width="500px"
+      >
+        <el-form :model="interviewResultForm" label-position="top">
+          <el-form-item label="面试反馈">
+            <el-input
+              v-model="interviewResultForm.interviewFeedback"
+              type="textarea"
+              :rows="4"
+              placeholder="请输入面试反馈（可选）"
+            />
+          </el-form-item>
+        </el-form>
+        <template #footer>
+          <el-button @click="showInterviewResultModal = false">取消</el-button>
+          <el-button type="primary" @click="submitInterviewResult"
+            >确定</el-button
+          >
+        </template>
+      </el-dialog>
     </main>
   </div>
 </template>
@@ -315,6 +424,7 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
+import { ElMessage } from "element-plus";
 import Sidebar from "@/components/company/Sidebar.vue";
 import TopNav from "@/components/company/TopNav.vue";
 import StatusStates from "@/components/company/StatusStates.vue";
@@ -336,9 +446,22 @@ const statusFilter = ref("all");
 
 // 模态框状态
 const showDetailModal = ref(false);
+const showInterviewModal = ref(false);
+const showInterviewResultModal = ref(false);
 const selectedApplication = ref(null);
 const studentResume = ref(null);
 const resumeLoading = ref(false);
+const interviewResultType = ref("PASS");
+
+const interviewForm = ref({
+  interviewTime: "",
+  interviewLocation: "",
+  interviewFeedback: "",
+});
+
+const interviewResultForm = ref({
+  interviewFeedback: "",
+});
 
 // 申请数据
 const applications = ref([]);
@@ -381,6 +504,14 @@ const fetchApplications = async () => {
         contact: application.student?.user?.phone || "",
         email: application.student?.user?.email || "",
         selfIntroduction: application.selfIntroduction || "",
+        interviewTime: application.interviewTime
+          ? new Date(application.interviewTime).toLocaleString("zh-CN", {
+              hour12: false,
+            })
+          : "",
+        interviewLocation: application.interviewLocation || "",
+        interviewResult: application.interviewResult || "",
+        interviewFeedback: application.interviewFeedback || "",
       }));
     } else {
       const errorData = await response.json().catch(() => ({}));
@@ -486,8 +617,11 @@ const handleCurrentChange = (page) => {
 const getStatusTagType = (status) => {
   switch (status) {
     case "pending":
+    case "reviewed":
       return "warning";
-    case "approved":
+    case "interview":
+      return "primary";
+    case "offer":
       return "success";
     case "rejected":
       return "danger";
@@ -496,17 +630,47 @@ const getStatusTagType = (status) => {
   }
 };
 
+const getInterviewResultType = (result) => {
+  switch (result) {
+    case "PASS":
+      return "success";
+    case "FAIL":
+      return "danger";
+    case "PENDING":
+      return "warning";
+    default:
+      return "info";
+  }
+};
+
+const getInterviewResultText = (result) => {
+  switch (result) {
+    case "PASS":
+      return "通过";
+    case "FAIL":
+      return "未通过";
+    case "PENDING":
+      return "待面试";
+    default:
+      return result;
+  }
+};
+
 // 获取状态文本
 const getStatusText = (status) => {
   switch (status) {
     case "pending":
       return "待处理";
-    case "approved":
-      return "已通过";
+    case "reviewed":
+      return "已查看";
+    case "interview":
+      return "面试中";
+    case "offer":
+      return "已录用";
     case "rejected":
       return "已拒绝";
     default:
-      return "未知状态";
+      return status;
   }
 };
 
@@ -643,21 +807,102 @@ const rejectApplication = async (applicationId) => {
         },
       );
       if (response.ok) {
-        // 更新本地数据
         const application = applications.value.find(
           (app) => app.id === applicationId,
         );
         if (application) {
           application.status = "rejected";
         }
-        alert("申请已拒绝");
+        ElMessage.success("申请已拒绝");
+        fetchApplications();
       } else {
-        alert("拒绝申请失败，请稍后重试");
+        ElMessage.error("拒绝申请失败，请稍后重试");
       }
     } catch (err) {
       console.error("拒绝申请失败:", err);
-      alert("网络错误，请稍后重试");
+      ElMessage.error("网络错误，请稍后重试");
     }
+  }
+};
+
+// 打开安排面试模态框
+const openScheduleInterviewModal = (application) => {
+  selectedApplication.value = application;
+  interviewForm.value = {
+    interviewTime: "",
+    interviewLocation: "",
+    interviewFeedback: "",
+  };
+  showInterviewModal.value = true;
+};
+
+// 提交面试安排
+const submitScheduleInterview = async () => {
+  if (!interviewForm.value.interviewTime || !interviewForm.value.interviewLocation) {
+    ElMessage.warning("请填写面试时间和面试地点");
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      `/employment/api/company/applications/${selectedApplication.value.id}/schedule-interview`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(interviewForm.value),
+      },
+    );
+    const data = await response.json();
+    if (data.success) {
+      ElMessage.success("面试安排成功");
+      showInterviewModal.value = false;
+      fetchApplications();
+    } else {
+      ElMessage.error(data.message || "安排面试失败");
+    }
+  } catch (err) {
+    console.error("安排面试失败:", err);
+    ElMessage.error("网络错误，请稍后重试");
+  }
+};
+
+// 打开面试结果模态框
+const openInterviewResultModal = (application, resultType) => {
+  selectedApplication.value = application;
+  interviewResultType.value = resultType;
+  interviewResultForm.value = {
+    interviewFeedback: "",
+  };
+  showInterviewResultModal.value = true;
+};
+
+// 提交面试结果
+const submitInterviewResult = async () => {
+  try {
+    const response = await fetch(
+      `/employment/api/company/applications/${selectedApplication.value.id}/interview-result`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          interviewResult: interviewResultType.value,
+          interviewFeedback: interviewResultForm.value.interviewFeedback,
+        }),
+      },
+    );
+    const data = await response.json();
+    if (data.success) {
+      ElMessage.success("面试结果已更新");
+      showInterviewResultModal.value = false;
+      fetchApplications();
+    } else {
+      ElMessage.error(data.message || "更新面试结果失败");
+    }
+  } catch (err) {
+    console.error("更新面试结果失败:", err);
+    ElMessage.error("网络错误，请稍后重试");
   }
 };
 

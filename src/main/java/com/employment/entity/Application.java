@@ -30,4 +30,12 @@ public class Application {
     private String resumeUrl;
     private String coverLetter;
     private String companyFeedback;
+
+    @Column(name = "interview_time")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date interviewTime;
+
+    private String interviewLocation;
+    private String interviewResult; // PASS, FAIL, PENDING
+    private String interviewFeedback;
 }

@@ -46,8 +46,14 @@ public class CompanyApiController {
             result.put("companyName", company.getCompanyName());
             result.put("industry", company.getIndustry());
             result.put("scale", company.getScale());
+            result.put("nature", company.getNature());
             result.put("businessLicense", company.getBusinessLicense());
             result.put("description", company.getDescription());
+            result.put("contactPerson", company.getContactPerson());
+            result.put("contactPhone", company.getContactPhone());
+            result.put("contactEmail", company.getContactEmail());
+            result.put("address", company.getAddress());
+            result.put("website", company.getWebsite());
             result.put("isVerified", company.isVerified());
             return ResponseEntity.ok(result);
         } catch (Exception e) {
@@ -83,11 +89,22 @@ public class CompanyApiController {
             company.setIndustry(
                     companyData.get("industry") != null ? companyData.get("industry").toString().trim() : "");
             company.setScale(companyData.get("scale") != null ? companyData.get("scale").toString().trim() : "");
+            company.setNature(companyData.get("nature") != null ? companyData.get("nature").toString().trim() : "");
             company.setBusinessLicense(
                     companyData.get("businessLicense") != null ? companyData.get("businessLicense").toString().trim()
                             : "");
             company.setDescription(
                     companyData.get("description") != null ? companyData.get("description").toString().trim() : "");
+            company.setContactPerson(
+                    companyData.get("contactPerson") != null ? companyData.get("contactPerson").toString().trim() : "");
+            company.setContactPhone(
+                    companyData.get("contactPhone") != null ? companyData.get("contactPhone").toString().trim() : "");
+            company.setContactEmail(
+                    companyData.get("contactEmail") != null ? companyData.get("contactEmail").toString().trim() : "");
+            company.setAddress(
+                    companyData.get("address") != null ? companyData.get("address").toString().trim() : "");
+            company.setWebsite(
+                    companyData.get("website") != null ? companyData.get("website").toString().trim() : "");
             company.setVerified(false);
 
             if (company.getCompanyName().isEmpty()) {
@@ -137,11 +154,29 @@ public class CompanyApiController {
             if (companyData.get("scale") != null) {
                 company.setScale(companyData.get("scale").toString().trim());
             }
+            if (companyData.get("nature") != null) {
+                company.setNature(companyData.get("nature").toString().trim());
+            }
             if (companyData.get("businessLicense") != null) {
                 company.setBusinessLicense(companyData.get("businessLicense").toString().trim());
             }
             if (companyData.get("description") != null) {
                 company.setDescription(companyData.get("description").toString().trim());
+            }
+            if (companyData.get("contactPerson") != null) {
+                company.setContactPerson(companyData.get("contactPerson").toString().trim());
+            }
+            if (companyData.get("contactPhone") != null) {
+                company.setContactPhone(companyData.get("contactPhone").toString().trim());
+            }
+            if (companyData.get("contactEmail") != null) {
+                company.setContactEmail(companyData.get("contactEmail").toString().trim());
+            }
+            if (companyData.get("address") != null) {
+                company.setAddress(companyData.get("address").toString().trim());
+            }
+            if (companyData.get("website") != null) {
+                company.setWebsite(companyData.get("website").toString().trim());
             }
 
             if (company.getCompanyName().isEmpty()) {

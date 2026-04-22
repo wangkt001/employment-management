@@ -146,6 +146,13 @@
             </el-form-item>
 
             <el-form-item label="营业执照">
+              <div v-if="companyForm.businessLicense" class="license-preview">
+                <img
+                  :src="companyForm.businessLicense"
+                  alt="营业执照"
+                  class="license-image"
+                />
+              </div>
               <el-upload
                 class="upload-demo"
                 action="#"
@@ -159,7 +166,11 @@
               >
                 <el-button type="primary" :disabled="!isEditing">
                   <el-icon><i-ep-upload /></el-icon>
-                  上传营业执照
+                  {{
+                    companyForm.businessLicense
+                      ? "更换营业执照"
+                      : "上传营业执照"
+                  }}
                 </el-button>
                 <template #tip>
                   <div class="el-upload__tip">
@@ -176,19 +187,6 @@
               </el-button>
             </el-form-item>
           </el-form>
-        </div>
-
-        <!-- 认证状态卡片 -->
-        <div class="verification-card">
-          <h3>认证状态</h3>
-          <div class="verification-status">
-            <el-tag :type="companyForm.verified ? 'success' : 'warning'">
-              {{ companyForm.verified ? "已认证" : "待认证" }}
-            </el-tag>
-            <p v-if="!companyForm.verified" class="verification-tip">
-              提交营业执照后，我们将在 1-3 个工作日内完成审核
-            </p>
-          </div>
         </div>
       </div>
     </main>
@@ -216,8 +214,14 @@ const companyForm = ref({
   companyName: "",
   industry: "",
   scale: "",
+  nature: "",
   businessLicense: "",
   description: "",
+  contactPerson: "",
+  contactPhone: "",
+  contactEmail: "",
+  address: "",
+  website: "",
   isVerified: false,
 });
 
@@ -246,8 +250,14 @@ const fetchCompanyProfile = async () => {
         companyName: data.companyName || "",
         industry: data.industry || "",
         scale: data.scale || "",
+        nature: data.nature || "",
         businessLicense: data.businessLicense || "",
         description: data.description || "",
+        contactPerson: data.contactPerson || "",
+        contactPhone: data.contactPhone || "",
+        contactEmail: data.contactEmail || "",
+        address: data.address || "",
+        website: data.website || "",
         isVerified: data.isVerified || false,
       };
       localStorage.setItem("companyId", data.id);
@@ -256,8 +266,14 @@ const fetchCompanyProfile = async () => {
         companyName: "",
         industry: "",
         scale: "",
+        nature: "",
         businessLicense: "",
         description: "",
+        contactPerson: "",
+        contactPhone: "",
+        contactEmail: "",
+        address: "",
+        website: "",
         isVerified: false,
       };
     }
@@ -418,6 +434,19 @@ onMounted(() => {
 /* 保存按钮 */
 .save-btn {
   margin-top: 10px;
+}
+
+/* 营业执照预览 */
+.license-preview {
+  margin-bottom: 16px;
+}
+
+.license-image {
+  max-width: 400px;
+  max-height: 300px;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  object-fit: contain;
 }
 
 /* 认证状态卡片 */

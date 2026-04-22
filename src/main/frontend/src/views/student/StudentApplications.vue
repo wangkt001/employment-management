@@ -101,6 +101,36 @@
                 </el-tag>
               </template>
             </el-table-column>
+            <el-table-column prop="interviewTime" label="面试时间" width="160">
+              <template #default="scope">
+                {{ scope.row.interviewTime || "-" }}
+              </template>
+            </el-table-column>
+            <el-table-column
+              prop="interviewLocation"
+              label="面试地点"
+              width="160"
+            >
+              <template #default="scope">
+                {{ scope.row.interviewLocation || "-" }}
+              </template>
+            </el-table-column>
+            <el-table-column
+              prop="interviewResult"
+              label="面试结果"
+              width="120"
+            >
+              <template #default="scope">
+                <el-tag
+                  v-if="scope.row.interviewResult"
+                  :type="getInterviewResultType(scope.row.interviewResult)"
+                  size="small"
+                >
+                  {{ getInterviewResultText(scope.row.interviewResult) }}
+                </el-tag>
+                <span v-else>-</span>
+              </template>
+            </el-table-column>
             <el-table-column prop="appliedDate" label="申请日期" width="150" />
             <el-table-column label="操作" width="150" fixed="right">
               <template #default="scope">
@@ -180,6 +210,42 @@
                 <label>申请日期:</label>
                 <span>{{ selectedApplication?.appliedDate }}</span>
               </div>
+              <div
+                v-if="selectedApplication?.interviewTime"
+                class="detail-item"
+              >
+                <label>面试时间:</label>
+                <span>{{ selectedApplication?.interviewTime }}</span>
+              </div>
+              <div
+                v-if="selectedApplication?.interviewLocation"
+                class="detail-item"
+              >
+                <label>面试地点:</label>
+                <span>{{ selectedApplication?.interviewLocation }}</span>
+              </div>
+              <div
+                v-if="selectedApplication?.interviewFeedback"
+                class="detail-item"
+              >
+                <label>面试反馈:</label>
+                <span>{{ selectedApplication?.interviewFeedback }}</span>
+              </div>
+              <div
+                v-if="selectedApplication?.interviewResult"
+                class="detail-item"
+              >
+                <label>面试结果:</label>
+                <el-tag
+                  :type="
+                    getInterviewResultType(selectedApplication?.interviewResult)
+                  "
+                >
+                  {{
+                    getInterviewResultText(selectedApplication?.interviewResult)
+                  }}
+                </el-tag>
+              </div>
             </div>
             <div class="modal-footer">
               <button
@@ -250,6 +316,14 @@ const fetchApplications = async () => {
         appliedDate: application.applyDate
           ? new Date(application.applyDate).toISOString().split("T")[0]
           : new Date().toISOString().split("T")[0],
+        interviewTime: application.interviewTime
+          ? new Date(application.interviewTime).toLocaleString("zh-CN", {
+              hour12: false,
+            })
+          : "",
+        interviewLocation: application.interviewLocation || "",
+        interviewResult: application.interviewResult || "",
+        interviewFeedback: application.interviewFeedback || "",
       }));
     } else {
       const errorData = await response.json().catch(() => ({}));
@@ -298,43 +372,62 @@ const totalApplications = computed(() => {
 
 // 获取状态类型
 const getStatusType = (status) => {
-  // 转换为大写，确保匹配
   const upperStatus = status?.toUpperCase();
   switch (upperStatus) {
     case "PENDING":
       return "info";
-    case "APPROVED":
-      return "success";
-    case "REJECTED":
-      return "danger";
     case "REVIEWED":
       return "primary";
     case "INTERVIEW":
       return "warning";
     case "OFFER":
       return "success";
+    case "REJECTED":
+      return "danger";
     default:
       return "info";
   }
 };
 
-// 获取状态文本
+const getInterviewResultType = (result) => {
+  switch (result) {
+    case "PASS":
+      return "success";
+    case "FAIL":
+      return "danger";
+    case "PENDING":
+      return "warning";
+    default:
+      return "info";
+  }
+};
+
+const getInterviewResultText = (result) => {
+  switch (result) {
+    case "PASS":
+      return "通过";
+    case "FAIL":
+      return "未通过";
+    case "PENDING":
+      return "待面试";
+    default:
+      return result;
+  }
+};
+
 const getStatusText = (status) => {
-  // 转换为大写，确保匹配
   const upperStatus = status?.toUpperCase();
   switch (upperStatus) {
     case "PENDING":
       return "待处理";
-    case "APPROVED":
-      return "已通过";
-    case "REJECTED":
-      return "已拒绝";
     case "REVIEWED":
       return "已查看";
     case "INTERVIEW":
-      return "面试";
+      return "面试中";
     case "OFFER":
-      return "录用";
+      return "已录用";
+    case "REJECTED":
+      return "已拒绝";
     default:
       return status;
   }

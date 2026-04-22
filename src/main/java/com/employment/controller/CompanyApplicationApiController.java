@@ -120,6 +120,93 @@ public class CompanyApplicationApiController {
         }
     }
 
+    // 安排面试
+    @PutMapping("/{applicationId}/schedule-interview")
+    public Map<String, Object> scheduleInterview(@PathVariable Long applicationId, @RequestBody Map<String, Object> interviewData) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            Application application = applicationRepository.findById(applicationId).orElse(null);
+            if (application == null) {
+                result.put("success", false);
+                result.put("message", "申请不存在");
+                return result;
+            }
+
+            application.setStatus("INTERVIEW");
+            application.setInterviewResult("PENDING");
+
+            if (interviewData.get("interviewTime") != null) {
+                String timeStr = interviewData.get("interviewTime").toString();
+                try {
+                    java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm");
+                    application.setInterviewTime(sdf.parse(timeStr));
+                } catch (Exception e) {
+                    result.put("success", false);
+                    result.put("message", "面试时间格式错误，请使用 yyyy-MM-dd HH:mm 格式");
+                    return result;
+                }
+            }
+            if (interviewData.get("interviewLocation") != null) {
+                application.setInterviewLocation(interviewData.get("interviewLocation").toString().trim());
+            }
+            if (interviewData.get("interviewFeedback") != null) {
+                application.setInterviewFeedback(interviewData.get("interviewFeedback").toString().trim());
+            }
+
+            applicationRepository.save(application);
+            result.put("success", true);
+            result.put("message", "面试安排成功");
+            return result;
+        } catch (Exception e) {
+            e.printStackTrace();
+            result.put("success", false);
+            result.put("message", "安排面试失败: " + e.getMessage());
+            return result;
+        }
+    }
+
+    // 更新面试结果
+    @PutMapping("/{applicationId}/interview-result")
+    public Map<String, Object> updateInterviewResult(@PathVariable Long applicationId, @RequestBody Map<String, Object> resultData) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            Application application = applicationRepository.findById(applicationId).orElse(null);
+            if (application == null) {
+                result.put("success", false);
+                result.put("message", "申请不存在");
+                return result;
+            }
+
+            String interviewResult = resultData.get("interviewResult").toString().trim();
+            if (!"PASS".equals(interviewResult) && !"FAIL".equals(interviewResult)) {
+                result.put("success", false);
+                result.put("message", "面试结果必须为 PASS 或 FAIL");
+                return result;
+            }
+
+            application.setInterviewResult(interviewResult);
+            if ("PASS".equals(interviewResult)) {
+                application.setStatus("OFFER");
+            } else {
+                application.setStatus("REJECTED");
+            }
+
+            if (resultData.get("interviewFeedback") != null) {
+                application.setInterviewFeedback(resultData.get("interviewFeedback").toString().trim());
+            }
+
+            applicationRepository.save(application);
+            result.put("success", true);
+            result.put("message", "面试结果已更新");
+            return result;
+        } catch (Exception e) {
+            e.printStackTrace();
+            result.put("success", false);
+            result.put("message", "更新面试结果失败: " + e.getMessage());
+            return result;
+        }
+    }
+
     // 获取申请对应的学生简历详情
     @GetMapping("/{applicationId}/student-resume")
     public Map<String, Object> getStudentResume(@PathVariable Long applicationId) {
@@ -149,6 +236,12 @@ public class CompanyApplicationApiController {
             result.put("expectedSalary", student.getExpectedSalary());
             result.put("careerDirection", student.getCareerDirection());
             result.put("selfIntroduction", student.getSelfIntroduction());
+
+            result.put("status", application.getStatus());
+            result.put("interviewTime", application.getInterviewTime() != null ? new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm").format(application.getInterviewTime()) : "");
+            result.put("interviewLocation", application.getInterviewLocation() != null ? application.getInterviewLocation() : "");
+            result.put("interviewResult", application.getInterviewResult() != null ? application.getInterviewResult() : "");
+            result.put("interviewFeedback", application.getInterviewFeedback() != null ? application.getInterviewFeedback() : "");
 
             List<WorkExperience> workExperiences = workExperienceRepository.findByStudentOrderByStartDateDesc(student);
             List<Map<String, Object>> workExpList = new ArrayList<>();

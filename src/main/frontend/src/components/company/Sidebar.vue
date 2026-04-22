@@ -56,6 +56,12 @@
         </template>
         <span>申请管理</span>
       </el-menu-item>
+      <el-menu-item index="/company/profile">
+        <template #icon>
+          <el-icon><i-ep-office-building /></el-icon>
+        </template>
+        <span>企业资料</span>
+      </el-menu-item>
     </template>
 
     <!-- 学生菜单 -->

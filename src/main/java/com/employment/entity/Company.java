@@ -21,8 +21,14 @@ public class Company {
 
     private String industry;
     private String scale;
+    private String nature;
     private String businessLicense;
     private String description;
+    private String contactPerson;
+    private String contactPhone;
+    private String contactEmail;
+    private String address;
+    private String website;
 
     @Column(name = "is_verified", nullable = false, columnDefinition = "boolean default false")
     private boolean isVerified = false;
